@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import categoriaRoutes from "./routes/categoriaRoutes.js";
+import productoRoutes from "./routes/productoRoutes.js";
 
 const app = express();
 
@@ -12,5 +13,6 @@ app.use(express.json()); // Necesario para leer el JSON de Postman
 // Rutas de las Épicas
 app.use("/api/auth", authRoutes);
 app.use("/api/categorias", categoriaRoutes);
+app.use("/api/productos", productoRoutes);
 
 export default app; // Exportamos la configuración
