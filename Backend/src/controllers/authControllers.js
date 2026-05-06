@@ -5,7 +5,7 @@ import jwt from 'jsonwebtoken';
 const prisma = new PrismaClient();
 
 export const login = async (req, res) => {
-    const { correo, contraseña } = req.body;
+    const { correo, password } = req.body;
 
     try {
         // 1. Buscar al usuario en la BD (HU1)
@@ -18,7 +18,7 @@ export const login = async (req, res) => {
         }
 
         // 2. Comparar contraseña enviada con el Hash de la BD
-        const esValida = await bcrypt.compare(contraseña, usuario.contraseña);
+        const esValida = await bcrypt.compare(password, usuario.password);
         
         if (!esValida) {
             return res.status(401).json({ error: "Contraseña incorrecta" });

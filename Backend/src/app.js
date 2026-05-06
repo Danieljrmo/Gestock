@@ -12,10 +12,10 @@ const app = express();
 app.use(cors());
 app.use(express.json()); // Necesario para leer el JSON de Postman
 
-// Rutas de las Épicas
+// Rutas de las Épicas (Probadas con Postman)
 app.use("/api/auth", authRoutes);
 app.use("/api/categorias", categoriaRoutes);
 app.use("/api/productos", productoRoutes);
 app.use("/api/ventas", ventaRoutes);
 app.use("/api/reportes", reporteRoutes);
-export default app; // Exportamos la configuración
+export default app; // Exportamos la configuración  
