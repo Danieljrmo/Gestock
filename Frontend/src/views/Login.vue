@@ -109,8 +109,7 @@ const handleLogin = async () => {
 
     if (response.data.token) {
       authStore.setToken(response.data.token);
-      alert('¡Bienvenido a Gestock!');
-      // router.push('/dashboard'); // Descomentar cuando tengamos el Dashboard
+      router.push('/dashboard'); // Redirige al Dashboard después del login exitoso
     }
   } catch (error) {
     errorMsg.value = error.response?.data?.mensaje || 'Error al conectar con el servidor';
