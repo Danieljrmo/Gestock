@@ -3,14 +3,16 @@
     <div class="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
       <div>
         <h3 class="text-lg font-bold text-[#0B192C]">Lista de Usuarios</h3>
-        <p class="text-sm text-gray-400">Personal authorized para operar el sistema Gestock</p>
+        <p class="text-sm text-gray-400">Personal autorizado para operar el sistema Gestock</p>
       </div>
+
       <button 
         @click="showModal = true"
         class="bg-[#0B192C] text-white hover:bg-blue-900 font-bold px-5 py-3 rounded-xl transition-all text-sm flex items-center gap-2 active:scale-95 shadow-lg shadow-blue-900/10"
       >
         <span>➕</span> Nuevo Usuario
       </button>
+      
     </div>
 
     <div v-if="errorMsg" class="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-semibold border border-red-100">
@@ -63,8 +65,23 @@
               </td>
               <td class="p-5 text-center">
                 <div class="flex items-center justify-center gap-2">
-                  <button class="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-all" title="Editar">✏️</button>
-                  <button class="text-red-600 hover:bg-red-50 p-2 rounded-lg transition-all" title="Eliminar">🗑️</button>
+
+                  <button 
+                    @click="openEditModal(user)"
+                    class="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-all active:scale-90" 
+                    title="Editar"
+                  >
+                    ✏️
+                  </button>
+
+                  <button 
+                    @click="handleDeleteUser(user.id, user.nombre)"
+                    class="text-red-600 hover:bg-red-50 p-2 rounded-lg transition-all active:scale-90" 
+                    title="Eliminar"
+                  >
+                    🗑️
+                  </button>
+
                 </div>
               </td>
             </tr>
@@ -80,11 +97,13 @@
       <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 overflow-hidden transform transition-all p-6 space-y-6">
         
         <div class="flex justify-between items-center border-b border-gray-100 pb-3">
-          <h3 class="text-lg font-black text-[#0B192C]">Registrar Nuevo Usuario</h3>
+          <h3 class="text-lg font-black text-[#0B192C]">
+            {{ isEditing ? 'Editar Usuario' : 'Registrar Nuevo Usuario' }}
+          </h3>
           <button @click="closeModal" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
         </div>
 
-        <form @submit.prevent="handleCreateUser" class="space-y-4">
+        <form @submit.prevent="handleSubmit" class="space-y-4">
           
           <div class="flex flex-col gap-1.5">
             <label class="text-xs font-bold uppercase text-gray-400 tracking-wider">Nombre Completo</label>
@@ -126,7 +145,7 @@
               class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-medium focus:outline-none focus:border-[#1E40AF] bg-white"
             >
               <option value="CAJERO">Cajero (Operador de ventas)</option>
-              <option value="ADMIN">Administrador (Control total)</option>
+              <option value="ADMINISTRADOR">Administrador (Control total)</option>
             </select>
           </div>
 
@@ -143,7 +162,7 @@
               :disabled="submitting"
               class="px-5 py-2.5 rounded-xl bg-[#00D2C4] text-[#0B192C] font-black text-sm hover:bg-[#00b8ac] transition-all disabled:opacity-50"
             >
-              {{ submitting ? 'Guardando...' : 'Guardar Usuario' }}
+              {{ submitting ? 'Guardando...' : (isEditing ? 'Actualizar Usuario' : 'Guardar Usuario') }}
             </button>
           </div>
         </form>
@@ -164,6 +183,8 @@ const users = ref([]);
 const loading = ref(true);
 const submitting = ref(false);
 const showModal = ref(false); // Estado que controla la visibilidad del modal
+const isEditing = ref(false);      // Determina si el modal es para editar
+const editingUserId = ref(null);  // Almacena el ID del usuario en edición
 
 const errorMsg = ref('');
 const successMsg = ref('');
@@ -193,31 +214,84 @@ const fetchUsers = async () => {
   }
 };
 
-// Crear un nuevo usuario (POST)
-const handleCreateUser = async () => {
+// Maneja el envío del formulario (Creación o Edición)
+const handleSubmit = async () => {
   try {
     submitting.value = true;
     errorMsg.value = '';
     successMsg.value = '';
 
-    await axios.post('http://localhost:4000/api/usuarios', form.value, {
+    if (isEditing.value) {
+      // --- MODO EDICIÓN: Dispara PUT ---
+      await axios.put(`http://localhost:4000/api/usuarios/${editingUserId.value}`, form.value, {
+        headers: { Authorization: `Bearer ${authStore.token}` }
+      });
+      successMsg.value = '¡Usuario actualizado exitosamente!';
+    } else {
+      // --- MODO CREACIÓN: Dispara POST ---
+      await axios.post('http://localhost:4000/api/usuarios', form.value, {
+        headers: { Authorization: `Bearer ${authStore.token}` }
+      });
+      successMsg.value = '¡Usuario registrado exitosamente!';
+    }
+
+    closeModal();
+    await fetchUsers(); // Recarga la tabla con los cambios reflejados
+  } catch (error) {
+    console.error('Error al procesar el formulario:', error);
+    errorMsg.value = error.response?.data?.mensaje || 'No se pudo guardar la información del usuario.';
+  } finally {
+    submitting.value = false;
+  }
+};
+
+// Abre el modal precargado con los datos del usuario a editar
+const openEditModal = (user) => {
+  isEditing.value = true;
+  editingUserId.value = user.id || user.id_usuario;
+  
+  // Precargamos el formulario con los datos actuales de la tabla
+  form.value = {
+    nombre: user.nombre,
+    correo: user.correo,
+    password: '', // Dejamos la contraseña en blanco por seguridad; si no escribe nada, el back no la cambia
+    rol: user.rol
+  };
+  
+  showModal.value = true;
+};
+
+// Eliminar un usuario de la base de datos (DELETE)
+const handleDeleteUser = async (id, nombre) => {
+  // Una confirmación nativa simple y elegante para evitar accidentes
+  const confirmar = confirm(`¿Estás seguro de que deseas eliminar al usuario "${nombre}"?`);
+  
+  if (!confirmar) return;
+
+  try {
+    errorMsg.value = '';
+    successMsg.value = '';
+
+    // Hacemos el DELETE inyectando el ID dinámicamente en la URL
+    await axios.delete(`http://localhost:4000/api/usuarios/${id}`, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
 
-    successMsg.value = '¡Usuario registrado exitosamente!';
-    closeModal();
-    await fetchUsers(); // Recarga la tabla de inmediato para ver el nuevo registro
+    successMsg.value = `¡Usuario "${nombre}" eliminado correctamente!`;
+    
+    // Volvemos a consultar la base de datos para refrescar las filas al instante
+    await fetchUsers(); 
   } catch (error) {
-    console.error('Error al guardar usuario:', error);
-    errorMsg.value = error.response?.data?.mensaje || 'No se pudo registrar el usuario.';
-  } finally {
-    submitting.value = false;
+    console.error('Error al eliminar usuario:', error);
+    errorMsg.value = error.response?.data?.mensaje || 'No se pudo eliminar el usuario.';
   }
 };
 
 // Limpiar y cerrar el modal
 const closeModal = () => {
   showModal.value = false;
+  isEditing.value = false;
+  editingUserId.value = null;
   form.value = {
     nombre: '',
     correo: '',

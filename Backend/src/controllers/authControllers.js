@@ -8,7 +8,7 @@ export const login = async (req, res) => {
     const { correo, password } = req.body;
 
     try {
-        // 1. Buscar al usuario en la BD (HU1)
+        // 1. Buscar al usuario en la BD 
         const usuario = await prisma.usuarios.findUnique({
             where: { correo: correo }
         });
