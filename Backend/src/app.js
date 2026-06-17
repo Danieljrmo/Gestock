@@ -6,7 +6,7 @@ import categoriaRoutes from "./routes/categoriaRoutes.js";
 import productoRoutes from "./routes/productoRoutes.js";
 import ventaRoutes from "./routes/ventaRoutes.js";
 import reporteRoutes from "./routes/reporteRoutes.js";
-
+import movimientoRoutes from "./routes/movimientoRoutes.js";
 const app = express();
 
 // Middlewares
@@ -20,4 +20,5 @@ app.use("/api/categorias", categoriaRoutes);
 app.use("/api/productos", productoRoutes);
 app.use("/api/ventas", ventaRoutes);
 app.use("/api/reportes", reporteRoutes);
+app.use("/api/movimientos", movimientoRoutes); 
 export default app; // Exportamos la configuración de Express para usarla en el servidor (index.js)
