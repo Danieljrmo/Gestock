@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
-
+// Controladores para productos
 export const crearProducto = async (req, res) => {
     const { 
         nombre_producto, 
@@ -73,5 +73,70 @@ export const buscarProducto = async (req, res) => {
         res.json(resultados);
     } catch (error) {
         res.status(500).json({ error: "Error en la búsqueda" });
+    }
+};
+
+// Actualizar un producto existente (PUT)
+export const actualizarProducto = async (req, res) => {
+    const { id } = req.params; // Captura el :id limpio de la URL
+    const { 
+        nombre_producto, 
+        codigo_barra, 
+        precio_compra, 
+        precio_venta, 
+        stock_actual, 
+        stock_minimo, 
+        id_categoria 
+    } = req.body;
+
+    try {
+        const productoActualizado = await prisma.productos.update({
+            where: { id_producto: parseInt(id) }, // Ajusta si en tu esquema es id_producto o id
+            data: {
+                nombre_producto,
+                codigo_barra,
+                precio_compra: parseFloat(precio_compra),
+                precio_venta: parseFloat(precio_venta),
+                stock_actual: parseInt(stock_actual),
+                stock_minimo: parseInt(stock_minimo),
+                id_categoria: parseInt(id_categoria)
+            }
+        });
+
+        res.json({
+            mensaje: "Producto actualizado exitosamente",
+            producto: productoActualizado
+        });
+    } catch (error) {
+        console.error("Error al actualizar producto:", error);
+        res.status(500).json({ mensaje: "No se pudo actualizar el producto. Verifica los datos." });
+    }
+};
+
+// Dar de baja / Eliminar (DELETE)
+export const eliminarProducto = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        // Si tu tabla 'productos' tiene una columna 'estado' o 'activo', 
+        // aquí harías un prisma.productos.update para cambiar a 'Inactivo' (Borrado lógico).
+        // Si no la tienes y requieres borrado físico directo:
+        const productoEliminado = await prisma.productos.delete({
+            where: { id_producto: parseInt(id) } // Ajusta si en tu esquema es id_producto o id
+        });
+
+        res.json({
+            mensaje: "Producto dado de baja exitosamente",
+            producto: productoEliminado
+        });
+    } catch (error) {
+        console.error("Error al eliminar producto:", error);
+        // Si PostgreSQL frena la eliminación por FKs relacionales (ej: ya se vendió en una boleta)
+        if (error.code === 'P2003') {
+            return res.status(400).json({ 
+                mensaje: "No se puede eliminar físicamente este producto porque cuenta con registros asociados en el historial de ventas." 
+            });
+        }
+        res.status(500).json({ mensaje: "No se pudo procesar la baja del producto." });
     }
 };

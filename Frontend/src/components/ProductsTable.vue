@@ -97,7 +97,7 @@
                 <div class="flex flex-col">
                   <span class="text-[#0B192C] font-bold text-sm">{{ prod.nombre_producto }}</span>
                   <span class="text-[11px] text-gray-400">
-                    {{ prod.categoria?.nombre_categoria || 'ID Cat: ' + prod.id_categoria }}
+                    {{ prod.categorias?.nombre_categoria || 'ID Cat: ' + prod.id_categoria }}
                   </span>
                 </div>
               </td>
@@ -186,15 +186,17 @@
       </div>
     </div>
 
-    <!-- 🔥 AQUÍ ESTÁ EL REY QUE FALTABA: MODAL POPUP NUEVO PRODUCTO -->
+    <!-- MODAL POPUP NUEVO PRODUCTO -->
     <div v-if="showProductModal" class="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
       <div class="bg-white rounded-3xl p-8 max-w-2xl w-full shadow-2xl border border-gray-100 relative max-h-[90vh] overflow-y-auto">
         <button @click="showProductModal = false; resetProductForm()" class="absolute top-5 right-5 text-gray-400 hover:text-gray-600 font-bold text-xl">✕</button>
         
-        <h3 class="text-xl font-black text-[#0B192C] mb-2">📦 Registrar Nuevo Producto</h3>
+        <h3 class="text-xl font-black text-[#0B192C] mb-2">
+          {{ isEditing ? '✏️ Editar Producto' : '📦 Registrar Nuevo Producto' }}
+        </h3>
         <p class="text-xs text-gray-400 mb-6">Ingresa las especificaciones, costos y niveles de stock iniciales para el catálogo.</p>
 
-        <form @submit.prevent="handleCreateProduct" class="space-y-5">
+        <form @submit.prevent="handleSubmitProduct" class="space-y-5">
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-[11px] font-black tracking-wider uppercase text-gray-400 mb-2">Código de Barras / SKU</label>
@@ -305,7 +307,7 @@
               :disabled="submittingProduct"
               class="px-5 py-2.5 rounded-xl bg-[#0B192C] text-white font-bold text-sm hover:bg-blue-950 transition-all disabled:opacity-50"
             >
-              {{ submittingProduct ? 'Guardando...' : 'Registrar Producto' }}
+              {{ submittingProduct ? 'Guardando...' : (isEditing ? 'Actualizar Producto' : 'Registrar Producto') }}
             </button>
           </div>
         </form>
@@ -337,7 +339,11 @@ const productos = ref([]);
 const productosFiltrados = ref([]);
 const loadingProducts = ref(false);
 
-// --- ESTADOS FORMULARIO NUEVO PRODUCTO ---
+// NUEVOS ESTADOS PARA MANEJO DE EDICIÓN
+const isEditing = ref(false);
+const currentProductId = ref(null);
+
+// --- ESTADOS FORMULARIO PRODUCTO ---
 const submittingProduct = ref(false);
 const productForm = ref({
   codigo_barra: '',
@@ -359,6 +365,8 @@ const resetProductForm = () => {
     stock_minimo: 5,
     id_categoria: ''
   };
+  isEditing.value = false;
+  currentProductId.value = null;
 };
 
 const fetchCategories = async () => {
@@ -424,6 +432,15 @@ const applyFilter = () => {
   }
 };
 
+// --- FUNCIÓN INTERMEDIARIA PARA EL PREVENT DEL FORMULARIO ---
+const handleSubmitProduct = async () => {
+  if (isEditing.value) {
+    await handleUpdateProduct();
+  } else {
+    await handleCreateProduct();
+  }
+};
+
 const handleCreateProduct = async () => {
   if (!productForm.value.id_categoria) {
     errorMsg.value = 'Por favor, selecciona una categoría para el producto.';
@@ -460,12 +477,48 @@ const handleCreateProduct = async () => {
   }
 };
 
+// 🔥 NUEVA FUNCIÓN 6: ACTUALIZAR PRODUCTO EXISTENTE (PUT)
+const handleUpdateProduct = async () => {
+  try {
+    submittingProduct.value = true;
+    errorMsg.value = '';
+    successMsg.value = '';
+
+    const payload = {
+      codigo_barra: productForm.value.codigo_barra.trim(),
+      nombre_producto: productForm.value.nombre_producto.trim(),
+      precio_compra: parseInt(productForm.value.precio_compra),
+      precio_venta: parseInt(productForm.value.precio_venta),
+      stock_actual: parseInt(productForm.value.stock_actual),
+      stock_minimo: parseInt(productForm.value.stock_minimo),
+      id_categoria: parseInt(productForm.value.id_categoria)
+    };
+
+    // Ajustamos el endpoint apuntando al ID relacional correspondiente
+    await axios.put(`http://localhost:4000/api/productos/${currentProductId.value}`, payload, {
+      headers: { Authorization: `Bearer ${authStore.token}` }
+    });
+
+    successMsg.value = `¡Producto "${payload.nombre_producto}" actualizado con éxito!`;
+    showProductModal.value = false;
+    resetProductForm();
+    await fetchProducts();
+  } catch (error) {
+    console.error('Error al actualizar producto:', error);
+    errorMsg.value = error.response?.data?.mensaje || 'Error al actualizar el producto.';
+  } finally {
+    submittingProduct.value = false;
+  }
+};
+
 const selectCategory = (id) => {
   categorySelected.value = id;
   applyFilter();
 };
 
 const openCreateModal = () => {
+  resetProductForm();
+  isEditing.value = false;
   showProductModal.value = true;
 };
 
@@ -474,11 +527,52 @@ onMounted(() => {
   fetchProducts();
 });
 
+// --- ACTIVACIÓN DEL MODO EDICIÓN PRECARGANDO DATOS ---
 const openEditModal = (producto) => {
-  console.log('Editar producto:', producto);
+  errorMsg.value = '';
+  successMsg.value = '';
+  isEditing.value = true;
+  
+  // Extraemos la ID de forma relacional limpia y forzamos que sea un entero
+  const idLimpia = producto.id_producto || producto.id;
+  currentProductId.value = parseInt(idLimpia);
+  
+  // Clonamos el objeto para poblar el formulario sin mutar la tabla antes de guardar
+  productForm.value = {
+    codigo_barra: producto.codigo_barra || '',
+    nombre_producto: producto.nombre_producto || '',
+    precio_compra: producto.precio_compra || '',
+    precio_venta: producto.precio_venta || '',
+    stock_actual: producto.stock_actual || '',
+    stock_minimo: producto.stock_minimo || 5,
+    id_categoria: producto.id_categoria || ''
+  };
+  
+  showProductModal.value = true;
 };
 
-const handleDisableProduct = (id, nombre) => {
-  console.log('Dar de baja producto ID:', id, nombre);
+// --- DESACTIVACIÓN LÓGICA (DAR DE BAJA) ---
+const handleDisableProduct = async (id, nombre) => {
+  const confirmar = confirm(`¿Estás seguro de que deseas dar de baja el producto "${nombre}"?`);
+  if (!confirmar) return;
+
+  try {
+    errorMsg.value = '';
+    successMsg.value = '';
+
+    // Sanitizamos la ID para que viaje como un número limpio en la URL
+    const idLimpia = parseInt(id);
+
+    // Ahora que declaramos el router.delete('/:id' ) en el Back, esta petición funcionará
+    await axios.delete(`http://localhost:4000/api/productos/${idLimpia}`, {
+      headers: { Authorization: `Bearer ${authStore.token}` }
+    });
+
+    successMsg.value = `El producto "${nombre}" ha sido dado de baja correctamente.`;
+    await fetchProducts(); // Recargamos el catálogo en caliente
+  } catch (error) {
+    console.error('Error al dar de baja el producto:', error);
+    errorMsg.value = error.response?.data?.mensaje || 'No se pudo dar de baja el producto en el servidor.';
+  }
 };
 </script>
