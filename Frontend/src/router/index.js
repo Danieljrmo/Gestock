@@ -2,7 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/Login.vue'
 import ProductsTable from '../components/ProductsTable.vue'
 import UsersTable from '../components/UsersTable.vue'
-import DashboardHome from '../components/DashboardHome.vue' // <-- Importamos tu nueva bienvenida
+import DashboardHome from '../components/DashboardHome.vue' 
+import VentasView from '../views/VentasView.vue' // 
 
 const routes = [
   { 
@@ -17,17 +18,22 @@ const routes = [
       {
         path: '', // Cuando la URL sea exactamente /dashboard
         name: 'dashboard-inicio',
-        component: DashboardHome // <-- Muestra la bienvenida
+        component: DashboardHome 
       },
       {
         path: 'usuarios', // Cuando la URL sea /dashboard/usuarios
         name: 'usuarios',
-        component: UsersTable // <-- Muestra la gestión de usuarios
+        component: UsersTable 
       },
       {
         path: 'productos', // Cuando la URL sea /dashboard/productos
         name: 'productos',
-        component: ProductsTable // <-- Muestra la gestión de productos
+        component: ProductsTable 
+      },
+      {
+        path: 'ventas', // Estructura de objeto limpia y nombre asignado
+        name: 'ventas',
+        component: VentasView 
       }
     ]
   }
