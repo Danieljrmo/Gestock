@@ -26,7 +26,7 @@ export const login = async (req, res) => {
 
         // 3. Si todo es correcto, generar Token JWT (Seguridad)
         const token = jwt.sign(
-            { id: usuario.id_usuario, rol: usuario.rol },
+            { id_usuario: usuario.id_usuario, rol: usuario.rol },
             process.env.JWT_SECRET || 'clave_secreta_gestock', // Clave en tu .env
             { expiresIn: '8h' } // La sesión dura 8 horas
         );

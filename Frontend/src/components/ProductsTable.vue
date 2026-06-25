@@ -15,6 +15,15 @@
         >
           📁 Nueva Categoría
         </button>
+
+        <!-- Botón para Movimientos -->
+        <button 
+          @click="showMovementModal = true"
+          class="border border-[#00D2C4] text-[#00D2C4] hover:bg-[#00D2C4]/5 font-extrabold px-4 py-3 rounded-xl transition-all text-sm flex items-center gap-2 active:scale-95 shadow-sm"
+        >
+          🔄 Registrar Movimiento
+        </button>
+
         <!-- Botón para Producto -->
         <button 
           @click="openCreateModal"
@@ -314,6 +323,14 @@
       </div>
     </div>
 
+    <!-- MODAL POPUP NUEVO MOVIMIENTO -->
+     <MovementsModal 
+      :show="showMovementModal"
+      :productos="productos" 
+      @close="showMovementModal = false"
+      @saved="fetchProducts" 
+    />
+
   </div>
 </template>
 
@@ -321,6 +338,7 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { useAuthStore } from '../stores/auth';
+import MovementsModal from './MovementsModal.vue';
 
 const authStore = useAuthStore();
 const errorMsg = ref('');
@@ -338,6 +356,7 @@ const showProductModal = ref(false);
 const productos = ref([]);
 const productosFiltrados = ref([]);
 const loadingProducts = ref(false);
+const showMovementModal = ref(false);
 
 // NUEVOS ESTADOS PARA MANEJO DE EDICIÓN
 const isEditing = ref(false);

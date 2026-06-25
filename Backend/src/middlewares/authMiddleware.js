@@ -5,7 +5,12 @@ export const verifyToken = (req, res, next) => {
   if (!token) return res.status(403).json({ error: "Token requerido" });
 
   try {
-    const decoded = jwt.verify(token.split(" ")[1], process.env.JWT_SECRET);
+    // Agregamos el respaldo string idéntico al que tiene tu Login para asegurar el descifrado
+    const decoded = jwt.verify(
+      token.split(" ")[1], 
+      process.env.JWT_SECRET || 'clave_secreta_gestock'
+    );
+    
     req.user = decoded;
     next();
   } catch (error) {

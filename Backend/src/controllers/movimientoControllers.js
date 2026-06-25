@@ -12,7 +12,7 @@ export const registrarMovimiento = async (req, res) => {
     } = req.body;
 
     // Capturamos el id_usuario desde el token de sesión autenticado (inyectado por tu middleware)
-    const id_usuario = req.user?.id_usuario || req.user?.id || req.user?.id_user;
+    const id_usuario = req.user?.id_usuario; 
 
     // Validaciones iniciales básicas
     if (!id_producto || !tipo_movimiento || !cantidad) {
