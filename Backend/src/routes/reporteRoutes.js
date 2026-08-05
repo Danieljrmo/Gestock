@@ -1,9 +1,11 @@
-import express from 'express';
-import * as reporteController from '../controllers/reporteControllers.js';
+import { Router } from 'express';
+import { getVentasPorPeriodo, getRotacionProductos, getHistorialMovimientos } from '../controllers/reporteControllers.js';
+import { verifyToken } from '../middlewares/authMiddleware.js';
 
-const router = express.Router();
+const router = Router();
 
-router.get('/diario', reporteController.ventasDelDia);
-router.get('/stock-bajo', reporteController.stockBajo);
+router.get('/periodo', verifyToken, getVentasPorPeriodo);
+router.get('/rotacion', verifyToken, getRotacionProductos);
+router.get('/movimientos', verifyToken, getHistorialMovimientos);
 
 export default router;

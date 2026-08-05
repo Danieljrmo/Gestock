@@ -3,7 +3,8 @@ import Login from '../views/Login.vue'
 import ProductsTable from '../components/ProductsTable.vue'
 import UsersTable from '../components/UsersTable.vue'
 import DashboardHome from '../components/DashboardHome.vue' 
-import VentasView from '../views/VentasView.vue' // 
+import VentasView from '../views/VentasView.vue' 
+import ReportesView from '../views/ReportesView.vue'
 
 const routes = [
   { 
@@ -34,6 +35,11 @@ const routes = [
         path: 'ventas', // Estructura de objeto limpia y nombre asignado
         name: 'ventas',
         component: VentasView 
+      },
+      {
+        path: 'reportes', // Estructura de objeto limpia y nombre asignado
+        name: 'reportes',
+        component: ReportesView 
       }
     ]
   }
