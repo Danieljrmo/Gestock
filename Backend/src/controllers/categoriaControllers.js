@@ -23,3 +23,30 @@ export const obtenerCategorias = async (req, res) => {
         res.status(500).json({ error: "Error al obtener categorías" });
     }
 };
+
+// ELIMINAR CATEGORÍA CON DESVINCULACIÓN DE PRODUCTOS
+export const eliminarCategoria = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const idCat = parseInt(id);
+
+        await prisma.$transaction(async (tx) => {
+            // 1. Desvincular productos dejándolos en id_categoria = null
+            await tx.productos.updateMany({
+                where: { id_categoria: idCat },
+                data: { id_categoria: null }
+            });
+
+            // 2. Eliminar la categoría
+            await tx.categorias.delete({
+                where: { id_categoria: idCat }
+            });
+        });
+
+        res.json({ mensaje: "Categoría eliminada con éxito y productos desvinculados." });
+    } catch (error) {
+        console.error("Error al eliminar categoría:", error);
+        res.status(500).json({ error: "No se pudo eliminar la categoría." });
+    }
+};

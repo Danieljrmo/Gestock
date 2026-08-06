@@ -28,41 +28,46 @@ export const registrarVenta = async (req, res) => {
                     throw new Error(`El producto con ID ${item.id_producto} no existe.`);
                 }
 
-                if (producto.stock_actual < parseInt(item.cantidad)) {
-                    throw new Error(`Stock insuficiente para '${producto.nombre_producto}'. Disponible: ${producto.stock_actual}, Solicitado: ${item.cantidad}`);
+                // Parseo flotante para soportar fraccionamiento (ej: 0.750 kg)
+                const cantidadSolicitada = parseFloat(item.cantidad);
+                const stockDisponible = parseFloat(producto.stock_actual || 0);
+
+                if (stockDisponible < cantidadSolicitada) {
+                    throw new Error(`Stock insuficiente para '${producto.nombre_producto}'. Disponible: ${stockDisponible}, Solicitado: ${cantidadSolicitada}`);
                 }
 
                 const precioUnitario = parseFloat(producto.precio_venta);
-                const subtotal = parseInt(item.cantidad) * precioUnitario;
+                // Redondeamos el subtotal a entero para la moneda CLP
+                const subtotal = Math.round(cantidadSolicitada * precioUnitario);
                 totalBoleta += subtotal;
 
                 // Guardamos los datos formateados para la inserción masiva
                 lineasDetalle.push({
                     id_producto: producto.id_producto,
-                    cantidad: parseInt(item.cantidad),
+                    cantidad: cantidadSolicitada,
                     precio_unitario: precioUnitario,
                     subtotal: subtotal
                 });
 
-                // 2. Actualizamos el stock de este producto usando decrement nativo (más eficiente)
+                // 2. Actualizamos el stock usando decrement con valor decimal
                 await tx.productos.update({
                     where: { id_producto: producto.id_producto },
                     data: { 
                         stock_actual: {
-                            decrement: parseInt(item.cantidad)
+                            decrement: cantidadSolicitada
                         } 
                     }
                 });
             }
 
-            // 3. Crear la VENTA (Maestro) con el total acumulado de todos los productos
+            // 3. Crear la VENTA (Maestro) con el total acumulado
             const nuevaVenta = await tx.ventas.create({
                 data: {
                     id_usuario: id_usuario ? parseInt(id_usuario) : null,
                     total: totalBoleta,
                     metodo_pago: metodo_pago || "Efectivo",
                     estado: "completada",
-                    // 4. Creamos todos los registros en DETALLE_VENTA en cascada de una sola pasada
+                    // 4. Creamos todos los registros en DETALLE_VENTA en cascada
                     detalle_venta: {
                         create: lineasDetalle.map(d => ({
                             id_producto: d.id_producto,
@@ -73,7 +78,7 @@ export const registrarVenta = async (req, res) => {
                     }
                 },
                 include: {
-                    detalle_venta: true // Incluimos el array de detalles creados en la respuesta
+                    detalle_venta: true
                 }
             });
 

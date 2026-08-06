@@ -209,10 +209,10 @@ onMounted(() => {
         </div>
         <button 
           @click="cargarReporteVentas" 
-          class="bg-[#00D2C4] text-white hover:bg-cyan-600 px-6 py-2.5 rounded-xl font-bold text-xs transition-all"
+          class="bg-[#03b5a9] text-white hover:bg-cyan-600 px-6 py-2.5 rounded-xl font-bold text-xs transition-all"
         >
           🔍 Filtrar Período
-        </button> 
+        </button>   
     </div>
     
     <!-- GRUPO BOTONES DE DESCARGA (DERECHA) -->

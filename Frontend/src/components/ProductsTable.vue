@@ -11,23 +11,23 @@
         <!-- Botón para Categorías -->
         <button 
           @click="showCategoryModal = true"
-          class="border border-gray-200 text-[#0B192C] hover:bg-gray-50 font-bold px-4 py-3 rounded-xl transition-all text-sm flex items-center gap-2 active:scale-95"
+          class="bg-[#064a74] text-white hover:bg-blue-900 font-bold px-5 py-3 rounded-xl transition-all text-sm flex items-center gap-2 active:scale-95 shadow-lg shadow-blue-900/10"
         >
-          📁 Nueva Categoría
+          <span>📁</span> Nueva Categoría
         </button>
 
         <!-- Botón para Movimientos -->
         <button 
           @click="showMovementModal = true"
-          class="border border-[#00D2C4] text-[#00D2C4] hover:bg-[#00D2C4]/5 font-extrabold px-4 py-3 rounded-xl transition-all text-sm flex items-center gap-2 active:scale-95 shadow-sm"
+          class="bg-[#064a74] text-white hover:bg-blue-900 font-bold px-5 py-3 rounded-xl transition-all text-sm flex items-center gap-2 active:scale-95 shadow-lg shadow-blue-900/10"
         >
-          🔄 Registrar Movimiento
+          <span>🔄</span> Registrar Movimiento
         </button>
 
         <!-- Botón para Producto -->
         <button 
           @click="openCreateModal"
-          class="bg-[#0B192C] text-white hover:bg-blue-900 font-bold px-5 py-3 rounded-xl transition-all text-sm flex items-center gap-2 active:scale-95 shadow-lg shadow-blue-900/10"
+          class="bg-[#064a74] text-white hover:bg-blue-900 font-bold px-5 py-3 rounded-xl transition-all text-sm flex items-center gap-2 active:scale-95 shadow-lg shadow-blue-900/10"
         >
           <span>➕</span> Nuevo Producto
         </button>
@@ -42,27 +42,57 @@
       ✅ {{ successMsg }}
     </div>
 
-    <!-- BLOQUE 2: Filtros e Interfaz Opción B -->
-    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-wrap items-center gap-2">
-      <span class="text-xs font-bold uppercase text-gray-400 mr-2">Filtrar por:</span> 
-      <!-- Pestaña fija: Todos -->
-      <button 
-        @click="selectCategory('todos')"
-        :class="categorySelected === 'todos' ? 'bg-[#0B192C] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
-        class="px-4 py-2 text-xs font-bold rounded-full uppercase tracking-wider transition-all"
-      >
-        Todos
-      </button>
-      <!-- Pestañas Dinámicas traídas desde PostgreSQL -->
-      <button 
-        v-for="cat in categorias" 
-        :key="cat.id_categoria || cat.id" 
-        @click="selectCategory(cat.id_categoria || cat.id)"
-        :class="categorySelected === (cat.id_categoria || cat.id) ? 'bg-[#0B192C] text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
-        class="px-4 py-2 text-xs font-bold rounded-full uppercase tracking-wider transition-all"
-      >
-        {{ cat.nombre_categoria || cat.nombre }}
-      </button>
+    <!-- BLOQUE 2: Filtros por Categoría con Scroll Horizontal Limpio -->
+    <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-black uppercase text-gray-400">Categorías del Catálogo:</span>
+        <span class="text-[11px] text-gray-400 font-medium">Desliza para ver más →</span>
+      </div>
+
+      <!-- Scroll Horizontal -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
+        <button 
+          @click="selectCategory('todos')"
+          :class="categorySelected === 'todos' ? 'bg-[#0B192C] text-white shadow-md' : 'bg-slate-100 text-gray-600 hover:bg-slate-200'"
+          class="px-4 py-2 text-xs font-bold rounded-xl whitespace-nowrap transition-all flex-shrink-0"
+        >
+          🗂️ TODOS ({{ productos.length }})
+        </button>
+
+        <div 
+          v-for="cat in categorias" 
+          :key="cat.id_categoria"
+          class="inline-flex items-center gap-1 bg-slate-100 rounded-xl p-1 flex-shrink-0 border border-slate-200/50"
+        >
+          <button 
+            @click="selectCategory(cat.id_categoria)"
+            :class="categorySelected === cat.id_categoria ? 'bg-[#0B192C] text-white shadow-sm' : 'text-gray-700 hover:text-black'"
+            class="px-3 py-1.5 text-xs font-bold rounded-lg whitespace-nowrap transition-all"
+          >
+            {{ cat.nombre_categoria }}
+          </button>
+      
+          <!-- Botón para eliminar categoría con confirmación de alerta -->
+          <button 
+            @click="confirmarEliminarCategoria(cat)"
+            class="p-1 text-gray-400 hover:text-red-600 rounded-md transition-colors"
+            title="Eliminar Categoría"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <!-- BARRA DE BÚSQUEDA HORIZONTAL GLOBAL -->
+      <div class="relative pt-2 border-t border-gray-100">
+        <input 
+          v-model="searchTerm"
+          @input="applyFilter"
+          type="text" 
+          placeholder="🔍 Buscar por nombre de producto o código SKU en la categoría seleccionada..."
+          class="w-full bg-slate-50 border border-gray-200 rounded-xl px-4 py-2.5 text-xs font-medium focus:outline-none focus:border-[#00D2C4] transition-all"
+        />
+      </div>
     </div>
 
     <!-- BLOQUE 3: Tabla Maestra -->
@@ -121,13 +151,13 @@
 
               <td class="p-5">
                 <span 
-                  :class="prod.stock_actual <= (prod.stock_minimo || 5) 
+                  :class="parseFloat(prod.stock_actual) <= parseFloat(prod.stock_minimo || 5) 
                     ? 'bg-red-50 text-red-600 border border-red-100' 
                     : 'bg-green-50 text-green-600 border border-green-100'"
                   class="px-2.5 py-1 rounded-md text-xs font-bold inline-flex items-center gap-1"
                 >
-                  <span v-if="prod.stock_actual <= (prod.stock_minimo || 5)">⚠️</span>
-                  {{ prod.stock_actual }} unids.
+                  <span v-if="parseFloat(prod.stock_actual) <= parseFloat(prod.stock_minimo || 5)">⚠️</span>
+                  {{ parseFloat(prod.stock_actual) }} {{ prod.unidad_medida === 'KILO' ? 'kg' : 'unids.' }}
                 </span>
               </td>
 
@@ -278,30 +308,49 @@
             </div>
           </div>
 
+          <!-- UNIDAD DE MEDIDA -->
+          <div>
+            <label class="block text-[11px] font-black tracking-wider uppercase text-gray-400 mb-2">Unidad de Medida</label>
+            <select 
+              v-model="productForm.unidad_medida"
+              required
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold focus:outline-none focus:border-[#00D2C4] transition-all bg-gray-50 focus:bg-white text-gray-700"
+            >
+              <option value="UNIDAD">Unidad (ud)</option>
+              <option value="KILO">Kilogramo (kg)</option>
+            </select>
+          </div>
+
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-[11px] font-black tracking-wider uppercase text-gray-400 mb-2">Stock Inicial Disponible</label>
+              <label class="block text-[11px] font-black tracking-wider uppercase text-gray-400 mb-2">
+                Stock Inicial {{ productForm.unidad_medida === 'KILO' ? '(Kg)' : '(Unidades)' }}
+              </label>
               <input 
                 v-model="productForm.stock_actual"
                 type="number" 
-                min="0"
+                :step="productForm.unidad_medida === 'KILO' ? '0.001' : '1'"
+                :min="0"
                 required
-                placeholder="24"
+                :placeholder="productForm.unidad_medida === 'KILO' ? '15.5' : '24'"
                 class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold focus:outline-none focus:border-[#00D2C4] transition-all bg-gray-50 focus:bg-white"
               />
             </div>
             <div>
-              <label class="block text-[11px] font-black tracking-wider uppercase text-gray-400 mb-2">Alerta Stock Mínimo (Crítico)</label>
+              <label class="block text-[11px] font-black tracking-wider uppercase text-gray-400 mb-2">
+                Alerta Stock Mínimo {{ productForm.unidad_medida === 'KILO' ? '(Kg)' : '(Unidades)' }}
+              </label>
               <input 
                 v-model="productForm.stock_minimo"
                 type="number" 
-                min="1"
+                :step="productForm.unidad_medida === 'KILO' ? '0.001' : '1'"
+                :min="0.001"
                 required
-                placeholder="5"
+                :placeholder="productForm.unidad_medida === 'KILO' ? '2.5' : '5'"
                 class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold focus:outline-none focus:border-[#00D2C4] transition-all bg-gray-50 focus:bg-white"
               />
             </div>
-          </div>
+          </div> 
 
           <div class="flex justify-end gap-3 pt-5 border-t border-gray-100">
             <button 
@@ -357,6 +406,7 @@ const productos = ref([]);
 const productosFiltrados = ref([]);
 const loadingProducts = ref(false);
 const showMovementModal = ref(false);
+const searchTerm = ref(''); // 
 
 // NUEVOS ESTADOS PARA MANEJO DE EDICIÓN
 const isEditing = ref(false);
@@ -371,7 +421,8 @@ const productForm = ref({
   precio_venta: '',
   stock_actual: '',
   stock_minimo: 5,
-  id_categoria: ''
+  id_categoria: '',
+  unidad_medida: 'UNIDAD'
 });
 
 const resetProductForm = () => {
@@ -382,7 +433,8 @@ const resetProductForm = () => {
     precio_venta: '',
     stock_actual: '',
     stock_minimo: 5,
-    id_categoria: ''
+    id_categoria: '',
+    unidad_medida: 'UNIDAD'
   };
   isEditing.value = false;
   currentProductId.value = null;
@@ -441,17 +493,28 @@ const fetchProducts = async () => {
   }
 };
 
+// 2. APLICAR FILTRO COMBINADO (CATEGORÍA + BUSCADOR DE TEXTO)
 const applyFilter = () => {
-  if (categorySelected.value === 'todos') {
-    productosFiltrados.value = productos.value;
-  } else {
-    productosFiltrados.value = productos.value.filter(
-      p => p.id_categoria === categorySelected.value
+  let resultado = productos.value;
+
+  // Filtrar por categoría
+  if (categorySelected.value !== 'todos') {
+    resultado = resultado.filter(p => p.id_categoria === categorySelected.value);
+  }
+
+  // Filtrar por texto en el buscador
+  if (searchTerm.value.trim()) {
+    const query = searchTerm.value.toLowerCase().trim();
+    resultado = resultado.filter(p => 
+      p.nombre_producto.toLowerCase().includes(query) ||
+      (p.codigo_barra && p.codigo_barra.includes(query))
     );
   }
+
+  productosFiltrados.value = resultado;
 };
 
-// --- FUNCIÓN INTERMEDIARIA PARA EL PREVENT DEL FORMULARIO ---
+// --- FUNCIÓN INTERMEDIARIA PARA EL FORMULARIO ---
 const handleSubmitProduct = async () => {
   if (isEditing.value) {
     await handleUpdateProduct();
@@ -473,10 +536,11 @@ const handleCreateProduct = async () => {
     const payload = {
       codigo_barra: productForm.value.codigo_barra.trim(),
       nombre_producto: productForm.value.nombre_producto.trim(),
-      precio_compra: parseInt(productForm.value.precio_compra),
-      precio_venta: parseInt(productForm.value.precio_venta),
-      stock_actual: parseInt(productForm.value.stock_actual),
-      stock_minimo: parseInt(productForm.value.stock_minimo),
+      precio_compra: parseFloat(productForm.value.precio_compra),
+      precio_venta: parseFloat(productForm.value.precio_venta),
+      stock_actual: parseFloat(productForm.value.stock_actual),
+      stock_minimo: parseFloat(productForm.value.stock_minimo),
+      unidad_medida: productForm.value.unidad_medida || 'UNIDAD',
       id_categoria: parseInt(productForm.value.id_categoria)
     };
 
@@ -496,7 +560,7 @@ const handleCreateProduct = async () => {
   }
 };
 
-// 🔥 NUEVA FUNCIÓN 6: ACTUALIZAR PRODUCTO EXISTENTE (PUT)
+// ACTUALIZAR PRODUCTO EXISTENTE (PUT)
 const handleUpdateProduct = async () => {
   try {
     submittingProduct.value = true;
@@ -506,14 +570,14 @@ const handleUpdateProduct = async () => {
     const payload = {
       codigo_barra: productForm.value.codigo_barra.trim(),
       nombre_producto: productForm.value.nombre_producto.trim(),
-      precio_compra: parseInt(productForm.value.precio_compra),
-      precio_venta: parseInt(productForm.value.precio_venta),
-      stock_actual: parseInt(productForm.value.stock_actual),
-      stock_minimo: parseInt(productForm.value.stock_minimo),
+      precio_compra: parseFloat(productForm.value.precio_compra),
+      precio_venta: parseFloat(productForm.value.precio_venta),
+      stock_actual: parseFloat(productForm.value.stock_actual),
+      stock_minimo: parseFloat(productForm.value.stock_minimo),
+      unidad_medida: productForm.value.unidad_medida || 'UNIDAD',
       id_categoria: parseInt(productForm.value.id_categoria)
     };
 
-    // Ajustamos el endpoint apuntando al ID relacional correspondiente
     await axios.put(`http://localhost:4000/api/productos/${currentProductId.value}`, payload, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
@@ -541,36 +605,30 @@ const openCreateModal = () => {
   showProductModal.value = true;
 };
 
-onMounted(() => {
-  fetchCategories();
-  fetchProducts();
-});
-
-// --- ACTIVACIÓN DEL MODO EDICIÓN PRECARGANDO DATOS ---
+// ACTIVACIÓN DEL MODO EDICIÓN PRECARGANDO DATOS
 const openEditModal = (producto) => {
   errorMsg.value = '';
   successMsg.value = '';
   isEditing.value = true;
   
-  // Extraemos la ID de forma relacional limpia y forzamos que sea un entero
   const idLimpia = producto.id_producto || producto.id;
   currentProductId.value = parseInt(idLimpia);
   
-  // Clonamos el objeto para poblar el formulario sin mutar la tabla antes de guardar
   productForm.value = {
     codigo_barra: producto.codigo_barra || '',
     nombre_producto: producto.nombre_producto || '',
     precio_compra: producto.precio_compra || '',
     precio_venta: producto.precio_venta || '',
-    stock_actual: producto.stock_actual || '',
-    stock_minimo: producto.stock_minimo || 5,
-    id_categoria: producto.id_categoria || ''
+    stock_actual: producto.stock_actual !== undefined ? producto.stock_actual : '',
+    stock_minimo: producto.stock_minimo !== undefined ? producto.stock_minimo : 5,
+    id_categoria: producto.id_categoria || '',
+    unidad_medida: producto.unidad_medida || 'UNIDAD'
   };
   
   showProductModal.value = true;
 };
 
-// --- DESACTIVACIÓN LÓGICA (DAR DE BAJA) ---
+// DAR DE BAJA UN PRODUCTO
 const handleDisableProduct = async (id, nombre) => {
   const confirmar = confirm(`¿Estás seguro de que deseas dar de baja el producto "${nombre}"?`);
   if (!confirmar) return;
@@ -578,20 +636,65 @@ const handleDisableProduct = async (id, nombre) => {
   try {
     errorMsg.value = '';
     successMsg.value = '';
-
-    // Sanitizamos la ID para que viaje como un número limpio en la URL
     const idLimpia = parseInt(id);
 
-    // Ahora que declaramos el router.delete('/:id' ) en el Back, esta petición funcionará
     await axios.delete(`http://localhost:4000/api/productos/${idLimpia}`, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
 
     successMsg.value = `El producto "${nombre}" ha sido dado de baja correctamente.`;
-    await fetchProducts(); // Recargamos el catálogo en caliente
+    await fetchProducts();
   } catch (error) {
     console.error('Error al dar de baja el producto:', error);
     errorMsg.value = error.response?.data?.mensaje || 'No se pudo dar de baja el producto en el servidor.';
   }
 };
+
+// FUNCION PARA ELIMINAR UNA CATEGORIA CON ALERTA DE CONFIRMACIÓN Y VERIFICACIÓN DE PRODUCTOS ASIGNADOS
+const confirmarEliminarCategoria = async (cat) => {
+  // Extraemos la ID asegurándonos de que sea un número puro
+  const idLimpia = parseInt(cat.id_categoria || cat.id);
+
+  if (!idLimpia || isNaN(idLimpia)) {
+    errorMsg.value = 'ID de categoría inválido.';
+    return;
+  }
+
+  const productosAfectados = productos.value.filter(
+    p => parseInt(p.id_categoria) === idLimpia
+  ).length;
+
+  let mensaje = `¿Estás seguro de que deseas eliminar la categoría "${cat.nombre_categoria}"?`;
+  if (productosAfectados > 0) {
+    mensaje = `⚠️ ¡ALERTA CRÍTICA DE INVENTARIO!\n\nLa categoría "${cat.nombre_categoria}" tiene ${productosAfectados} producto(s) asignado(s).\n\nSi la eliminas, esos productos no se borrarán pero quedarán en el grupo "Sin Categoría". ¿Deseas continuar?`;
+  }
+
+  if (confirm(mensaje)) {
+    try {
+      errorMsg.value = '';
+      successMsg.value = '';
+
+      await axios.delete(`http://localhost:4000/api/categorias/${idLimpia}`, {
+        headers: { Authorization: `Bearer ${authStore.token}` }
+      });
+
+      successMsg.value = `Categoría "${cat.nombre_categoria}" eliminada correctamente.`;
+
+      if (categorySelected.value === idLimpia) {
+        categorySelected.value = 'todos';
+      }
+
+      await fetchCategories();
+      await fetchProducts();
+    } catch (err) {
+      console.error('Error al eliminar categoría:', err);
+      errorMsg.value = err.response?.data?.mensaje || 'No se pudo eliminar la categoría en el servidor.';
+    }
+  }
+};
+
+onMounted(() => {
+  fetchCategories();
+  fetchProducts();
+});
 </script>

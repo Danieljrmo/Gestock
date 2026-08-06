@@ -5,7 +5,7 @@
         <h3 class="text-lg font-bold text-[#0B192C]">Lista de Usuarios</h3>
         <p class="text-sm text-gray-400">Personal autorizado para operar el sistema Gestock</p>
       </div>
-
+      <!-- Botón de nuevo usuario -->
       <button 
         @click="showModal = true"
         class="bg-[#0B192C] text-white hover:bg-blue-900 font-bold px-5 py-3 rounded-xl transition-all text-sm flex items-center gap-2 active:scale-95 shadow-lg shadow-blue-900/10"

@@ -40,38 +40,41 @@ const productosFiltrados = computed(() => {
   );
 });
 
-// --- ACCIONES DEL CARRITO ---
+// AGREGAR AL CARRITO (SOPORTA KILOS Y UNIDADES)
 const agregarAlCarrito = (producto) => {
   mensajeError.value = '';
   
-  // Validar si el producto tiene stock disponible
-  if (producto.stock_actual <= 0) {
+  const stockDisponible = parseFloat(producto.stock_actual || 0);
+
+  if (stockDisponible <= 0) {
     mensajeError.value = `El producto '${producto.nombre_producto}' no tiene stock disponible.`;
     return;
   }
 
   const existe = carrito.value.find(item => item.id_producto === producto.id_producto);
+  const esPesable = producto.unidad_medida === 'KILO';
 
   if (existe) {
-    // Validar no exceder el stock físico de la BD
-    if (existe.cantidad + 1 > producto.stock_actual) {
-      mensajeError.value = `Stock máximo disponible alcanzado (${producto.stock_actual} unids).`;
+    const paso = esPesable ? 0.500 : 1; // Si es Kilo suma de 0.5 en 0.5 con botones
+    if (existe.cantidad + paso > existe.stock_max) {
+      mensajeError.value = `Stock máximo disponible alcanzado (${existe.stock_max} ${esPesable ? 'kg' : 'unids'}).`;
       return;
     }
-    existe.cantidad++;
-    existe.subtotal = existe.cantidad * existe.precio_venta;
+    existe.cantidad = parseFloat((existe.cantidad + paso).toFixed(3));
+    existe.subtotal = Math.round(existe.cantidad * existe.precio_venta);
   } else {
     carrito.value.push({
       id_producto: producto.id_producto,
       nombre: producto.nombre_producto,
       precio_venta: parseFloat(producto.precio_venta),
-      cantidad: 1,
+      cantidad: 1, // Inicia en 1 (o 1.000 kg)
       subtotal: parseFloat(producto.precio_venta),
-      stock_max: producto.stock_actual
+      stock_max: stockDisponible,
+      unidad_medida: producto.unidad_medida || 'UNIDAD'
     });
   }
   
-  busqueda.value = ''; // Limpiar el buscador tras agregar
+  busqueda.value = '';
 };
 
 // Auto-agregar si el escáner detecta un código de barras exacto (Enter)
@@ -83,22 +86,50 @@ const buscarYAgregarBarcode = () => {
   }
 };
 
+// INCREMENTAR CON BOTÓN (+)
 const incrementarCantidad = (item) => {
-  if (item.cantidad + 1 > item.stock_max) {
-    mensajeError.value = `No hay más stock disponible para ${item.nombre}`;
+  const esPesable = item.unidad_medida === 'KILO';
+  const paso = esPesable ? 0.500 : 1;
+  const nuevaCantidad = parseFloat((item.cantidad + paso).toFixed(3));
+
+  if (nuevaCantidad > item.stock_max) {
+    mensajeError.value = `No hay más stock disponible para ${item.nombre} (Máx: ${item.stock_max} ${esPesable ? 'kg' : 'unids'})`;
     return;
   }
-  item.cantidad++;
-  item.subtotal = item.cantidad * item.precio_venta;
+  item.cantidad = nuevaCantidad;
+  item.subtotal = Math.round(item.cantidad * item.precio_venta);
 };
 
+// DECREMENTAR CON BOTÓN (-)
 const decrementarCantidad = (item) => {
-  if (item.cantidad > 1) {
-    item.cantidad--;
-    item.subtotal = item.cantidad * item.precio_venta;
+  const esPesable = item.unidad_medida === 'KILO';
+  const paso = esPesable ? 0.500 : 1;
+  const nuevaCantidad = parseFloat((item.cantidad - paso).toFixed(3));
+
+  if (nuevaCantidad > 0) {
+    item.cantidad = nuevaCantidad;
+    item.subtotal = Math.round(item.cantidad * item.precio_venta);
   } else {
     eliminarDelCarrito(item.id_producto);
   }
+};
+
+// EDICIÓN MANUAL DIRECTA DESDE EL INPUT (ej: tipear 0.750)
+const actualizarCantidadDirecta = (item, event) => {
+  const valorIngresado = parseFloat(event.target.value);
+
+  if (isNaN(valorIngresado) || valorIngresado <= 0) {
+    return; // Si el usuario borra o escribe 0, se ignora hasta ingresar un número válido
+  }
+
+  if (valorIngresado > item.stock_max) {
+    mensajeError.value = `Supera el stock disponible para ${item.nombre} (Máx: ${item.stock_max} ${item.unidad_medida === 'KILO' ? 'kg' : 'unids'})`;
+    item.cantidad = item.stock_max;
+  } else {
+    item.cantidad = valorIngresado;
+  }
+
+  item.subtotal = Math.round(item.cantidad * item.precio_venta);
 };
 
 const eliminarDelCarrito = (id_producto) => {
@@ -241,9 +272,28 @@ const procesarVenta = async () => {
               <tr v-for="item in carrito" :key="item.id_producto" class="hover:bg-slate-50/50">
                 <td class="p-4 font-bold text-[#0B192C]">{{ item.nombre }}</td>
                 <td class="p-4 text-center">
-                  <div class="inline-flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
+                  <div class="inline-flex items-center gap-1.5 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
                     <button @click="decrementarCantidad(item)" class="text-gray-400 hover:text-gray-600 font-black">➖</button>
-                    <span class="font-bold text-xs px-1">{{ item.cantidad }}</span>
+    
+                    <!-- INPUT EDICIÓN MANUAL PARA PRODUCTOS PESABLES (KILOS) -->
+                    <input 
+                      v-if="item.unidad_medida === 'KILO'"
+                      :value="item.cantidad"
+                      @input="actualizarCantidadDirecta(item, $event)"
+                      type="number"
+                      step="0.050"
+                      min="0.001"
+                      class="w-16 text-center font-black text-xs bg-white border border-gray-200 rounded px-1 py-0.5 focus:outline-none focus:border-[#00D2C4]"
+                    />
+    
+                    <!-- SPAN ESTÁTICO PARA PRODUCTOS POR UNIDAD -->
+                    <span v-else class="font-black text-xs px-1">{{ item.cantidad }}</span>
+
+                    <!-- ETIQUETA DE UNIDAD -->
+                    <span class="text-[10px] font-bold uppercase text-gray-400">
+                      {{ item.unidad_medida === 'KILO' ? 'kg' : 'ud' }}
+                    </span>
+
                     <button @click="incrementarCantidad(item)" class="text-gray-400 hover:text-gray-600 font-black">➕</button>
                   </div>
                 </td>
@@ -275,17 +325,17 @@ const procesarVenta = async () => {
           <div class="grid grid-cols-2 gap-2">
             <button 
               @click="metodoPago = 'Efectivo'"
-              :class="metodoPago === 'Efectivo' ? 'border-[#00D2C4] bg-cyan-50/20 text-[#00D2C4]' : 'border-gray-200 text-gray-500 hover:bg-gray-50'"
+              :class="metodoPago === 'Efectivo' ? 'border-[#0664f0] bg-cyan-50/20 text-[#0664f0]' : 'border-gray-200 text-gray-500 hover:bg-gray-50'"
               class="p-3 rounded-xl border font-bold text-xs transition-all flex items-center justify-center gap-2"
             >
-              💵 Efectivo
+              💵Efectivo
             </button>
             <button 
               @click="metodoPago = 'Debito'"
-              :class="metodoPago === 'Debito' ? 'border-[#00D2C4] bg-cyan-50/20 text-[#00D2C4]' : 'border-gray-200 text-gray-500 hover:bg-gray-50'"
+              :class="metodoPago === 'Debito' ? 'border-[#0664f0] bg-cyan-50/20 text-[#0664f0]' : 'border-gray-200 text-gray-500 hover:bg-gray-50'"
               class="p-3 rounded-xl border font-bold text-xs transition-all flex items-center justify-center gap-2"
             >
-              💳 Débito/Transf.
+              💳Débito/Transf.
             </button>
           </div>
         </div>

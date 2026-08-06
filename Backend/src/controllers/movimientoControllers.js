@@ -10,17 +10,14 @@ export const registrarMovimiento = async (req, res) => {
         motivo, 
         id_proveedor 
     } = req.body;
-
-    // Capturamos el id_usuario desde el token de sesión autenticado (inyectado por tu middleware)
+    
     const id_usuario = req.user?.id_usuario; 
 
-    // Validaciones iniciales básicas
     if (!id_producto || !tipo_movimiento || !cantidad) {
         return res.status(400).json({ mensaje: "Faltan campos obligatorios (producto, tipo, cantidad)." });
     }
 
     try {
-        // TRANSACCIÓN ATÓMICA: Se ejecuta todo o nada
         const resultado = await prisma.$transaction(async (tx) => {
             
             // 1. Verificar si el producto existe y capturar su stock actual
@@ -32,9 +29,9 @@ export const registrarMovimiento = async (req, res) => {
                 throw new Error("El producto especificado no existe.");
             }
 
-            // 2. Calcular el nuevo stock según la regla de negocio
-            let nuevoStock = producto.stock_actual || 0;
-            const cantidadNum = parseInt(cantidad);
+            // 2. Calcular el nuevo stock convirtiendo la cantidad a número decimal
+            let nuevoStock = parseFloat(producto.stock_actual || 0);
+            const cantidadNum = parseFloat(cantidad);
 
             if (tipo_movimiento.toLowerCase() === 'entrada') {
                 nuevoStock += cantidadNum;
@@ -79,7 +76,7 @@ export const registrarMovimiento = async (req, res) => {
     }
 };
 
-// OBTENER EL HISTORIAL GENERAL DE MOVIMIENTOS (CON RELACIONES)
+// OBTENER EL HISTORIAL GENERAL DE MOVIMIENTOS
 export const obtenerHistorialMovimientos = async (req, res) => {
     try {
         const historial = await prisma.movimientos_inventario.findMany({
@@ -95,7 +92,7 @@ export const obtenerHistorialMovimientos = async (req, res) => {
                 }
             },
             orderBy: {
-                fecha_movimiento: 'desc' // Los más recientes primero
+                fecha_movimiento: 'desc'
             }
         });
 

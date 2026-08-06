@@ -1,0 +1,99 @@
+[
+  {
+    "categoria": "Aderesos y Condimentos",
+    "productos": [
+      { "nombre": "Ajo en Polvo Gourmet 15g", "codigo_barra": "7802000000011", "precio_compra": 450, "precio_venta": 700, "stock_actual": 12, "stock_minimo": 3, "unidad_medida": "UNIDAD" },
+      { "nombre": "Merquén Gourmet 15g", "codigo_barra": "7802000000028", "precio_compra": 450, "precio_venta": 700, "stock_actual": 10, "stock_minimo": 3, "unidad_medida": "UNIDAD" },
+      { "nombre": "Pimienta Negra Molida Gourmet 15g", "codigo_barra": "7802000000035", "precio_compra": 450, "precio_venta": 700, "stock_actual": 8, "stock_minimo": 3, "unidad_medida": "UNIDAD" },
+      { "nombre": "Canela Entera Gourmet 15g", "codigo_barra": "7802000000042", "precio_compra": 500, "precio_venta": 800, "stock_actual": 6, "stock_minimo": 2, "unidad_medida": "UNIDAD" },
+      { "nombre": "Bicarbonato de Sodio Gourmet 30g", "codigo_barra": "7802000000059", "precio_compra": 400, "precio_venta": 700, "stock_actual": 15, "stock_minimo": 4, "unidad_medida": "UNIDAD" },
+      { "nombre": "Orégano Entero Gourmet 20g", "codigo_barra": "7802000000066", "precio_compra": 450, "precio_venta": 700, "stock_actual": 14, "stock_minimo": 4, "unidad_medida": "UNIDAD" }
+    ]
+  },
+  {
+    "categoria": "Frutas y Verduras (Pesables)",
+    "productos": [
+      { "nombre": "Tomate Larga Vida", "codigo_barra": "2000000000015", "precio_compra": 800, "precio_venta": 1400, "stock_actual": 25, "stock_minimo": 5, "unidad_medida": "KILO" },
+      { "nombre": "Limón Malla / Granel", "codigo_barra": "2000000000022", "precio_compra": 700, "precio_venta": 1200, "stock_actual": 18, "stock_minimo": 4, "unidad_medida": "KILO" },
+      { "nombre": "Cebolla Vieja Malla", "codigo_barra": "2000000000039", "precio_compra": 600, "precio_venta": 1000, "stock_actual": 30, "stock_minimo": 8, "unidad_medida": "KILO" },
+      { "nombre": "Plátano Caribe Superior", "codigo_barra": "2000000000046", "precio_compra": 850, "precio_venta": 1350, "stock_actual": 15, "stock_minimo": 3, "unidad_medida": "KILO" },
+      { "nombre": "Kiwi Bagno", "codigo_barra": "2000000000053", "precio_compra": 1100, "precio_venta": 1800, "stock_actual": 12, "stock_minimo": 3, "unidad_medida": "KILO" },
+      { "nombre": "Repollo Crespo (Unidad)", "codigo_barra": "2000000000060", "precio_compra": 800, "precio_venta": 1500, "stock_actual": 8, "stock_minimo": 2, "unidad_medida": "UNIDAD" },
+      { "nombre": "Cauliflor Superior", "codigo_barra": "2000000000077", "precio_compra": 1000, "precio_venta": 1800, "stock_actual": 5, "stock_minimo": 2, "unidad_medida": "UNIDAD" }
+    ]
+  },
+  {
+    "categoria": "Despenseria y Encurtidos JC",
+    "productos": [
+      { "nombre": "Chucrut JC Envasado 200g", "codigo_barra": "7804500000010", "precio_compra": 900, "precio_venta": 1400, "stock_actual": 10, "stock_minimo": 2, "unidad_medida": "UNIDAD" },
+      { "nombre": "Cebollas Escabeche JC 200g", "codigo_barra": "7804500000027", "precio_compra": 950, "precio_venta": 1500, "stock_actual": 8, "stock_minimo": 2, "unidad_medida": "UNIDAD" },
+      { "nombre": "Ají Jalapeño JC 200g", "codigo_barra": "7804500000034", "precio_compra": 900, "precio_venta": 1450, "stock_actual": 6, "stock_minimo": 2, "unidad_medida": "UNIDAD" },
+      { "nombre": "Ají de Oro JC", "codigo_barra": "7804500000041", "precio_compra": 1000, "precio_venta": 1600, "stock_actual": 7, "stock_minimo": 2, "unidad_medida": "UNIDAD" },
+      { "nombre": "Aceituna Azapa JC 200g", "codigo_barra": "7804500000058", "precio_compra": 1200, "precio_venta": 1800, "stock_actual": 12, "stock_minimo": 3, "unidad_medida": "UNIDAD" }
+    ]
+  },
+  {
+    "categoria": "Bebidas y Refrescos",
+    "productos": [
+      { "nombre": "Pap 3.0L Retornable/Desechable", "codigo_barra": "7802800001112", "precio_compra": 1600, "precio_venta": 2300, "stock_actual": 8, "stock_minimo": 3, "unidad_medida": "UNIDAD" },
+      { "nombre": "Jugo Watt's Piña 1.5L", "codigo_barra": "7801600002223", "precio_compra": 1100, "precio_venta": 1650, "stock_actual": 6, "stock_minimo": 2, "unidad_medida": "UNIDAD" },
+      { "nombre": "Jugo Watt's Tuttifruti 1.5L", "codigo_barra": "7801600002230", "precio_compra": 1100, "precio_venta": 1650, "stock_actual": 5, "stock_minimo": 2, "unidad_medida": "UNIDAD" },
+      { "nombre": "Agua Cachantun Sin Gas 1.5L", "codigo_barra": "7802800003341", "precio_compra": 600, "precio_venta": 1000, "stock_actual": 14, "stock_minimo": 4, "unidad_medida": "UNIDAD" },
+      { "nombre": "Fanta Naranja 1.5L", "codigo_barra": "7801600004452", "precio_compra": 1000, "precio_venta": 1500, "stock_actual": 10, "stock_minimo": 3, "unidad_medida": "UNIDAD" },
+      { "nombre": "Sprite 1.5L", "codigo_barra": "7801600004469", "precio_compra": 1000, "precio_venta": 1500, "stock_actual": 12, "stock_minimo": 3, "unidad_medida": "UNIDAD" },
+      { "nombre": "Coca Cola Sabor Original 1.5L", "codigo_barra": "7801600004476", "precio_compra": 1100, "precio_venta": 1600, "stock_actual": 20, "stock_minimo": 5, "unidad_medida": "UNIDAD" }
+    ]
+  },
+  {
+    "categoria": "Cecinas y Lácteos",
+    "productos": [
+      { "nombre": "Vianesas Receta del Abuelo paquete", "codigo_barra": "7801500005511", "precio_compra": 1400, "precio_venta": 2100, "stock_actual": 9, "stock_minimo": 3, "unidad_medida": "UNIDAD" },
+      { "nombre": "Patè de Ternera Colun 125g", "codigo_barra": "7802000006622", "precio_compra": 750, "precio_venta": 1200, "stock_actual": 15, "stock_minimo": 4, "unidad_medida": "UNIDAD" },
+      { "nombre": "Mortadela Lisa PF paquete/pieza", "codigo_barra": "7801500007733", "precio_compra": 1100, "precio_venta": 1750, "stock_actual": 7, "stock_minimo": 2, "unidad_medida": "UNIDAD" },
+      { "nombre": "Crema de Leche Colun 200ml cajita", "codigo_barra": "7802000008844", "precio_compra": 650, "precio_venta": 1000, "stock_actual": 18, "stock_minimo": 5, "unidad_medida": "UNIDAD" },
+      { "nombre": "Mantequilla Colun con Sal 250g", "codigo_barra": "7802000009955", "precio_compra": 1800, "precio_venta": 2500, "stock_actual": 10, "stock_minimo": 3, "unidad_medida": "UNIDAD" },
+      { "nombre": "Queso Laminado Frutillar 250g", "codigo_barra": "7802000010011", "precio_compra": 1900, "precio_venta": 2700, "stock_actual": 8, "stock_minimo": 2, "unidad_medida": "UNIDAD" }
+    ]
+  },
+  {
+    "categoria": "Confites y Galletas",
+    "productos": [
+      { "nombre": "Galletas Frac Vainilla/Chocolate", "codigo_barra": "7801000011122", "precio_compra": 450, "precio_venta": 750, "stock_actual": 25, "stock_minimo": 6, "unidad_medida": "UNIDAD" },
+      { "nombre": "Galletas NIK Banana / Vainilla", "codigo_barra": "7801000012233", "precio_compra": 400, "precio_venta": 700, "stock_actual": 20, "stock_minimo": 5, "unidad_medida": "UNIDAD" },
+      { "nombre": "Galletas McKay Vino / Agua", "codigo_barra": "7801000013344", "precio_compra": 500, "precio_venta": 850, "stock_actual": 15, "stock_minimo": 4, "unidad_medida": "UNIDAD" },
+      { "nombre": "Bizcocho Chocman Costa", "codigo_barra": "7801000014455", "precio_compra": 250, "precio_venta": 450, "stock_actual": 30, "stock_minimo": 8, "unidad_medida": "UNIDAD" },
+      { "nombre": "Maní Choc Ambrosoli", "codigo_barra": "7801000015566", "precio_compra": 200, "precio_venta": 400, "stock_actual": 40, "stock_minimo": 10, "unidad_medida": "UNIDAD" },
+      { "nombre": "Papa Frita Chisport", "codigo_barra": "7801000016677", "precio_compra": 350, "precio_venta": 600, "stock_actual": 22, "stock_minimo": 5, "unidad_medida": "UNIDAD" }
+    ]
+  },
+  {
+    "categoria": "Alimentos Frescos y Preparados",
+    "productos": [
+      { "nombre": "Pan Corriente (Marraqueta/Hallulla)", "codigo_barra": "1000000000018", "precio_compra": 1100, "precio_venta": 1700, "stock_actual": 15, "stock_minimo": 4, "unidad_medida": "KILO" },
+      { "nombre": "Huevo de Gallina Falso/Bandeja (Unid)", "codigo_barra": "1000000000025", "precio_compra": 150, "precio_venta": 250, "stock_actual": 90, "stock_minimo": 20, "unidad_medida": "UNIDAD" },
+      { "nombre": "Queso Mantecoso Artesanal (Pieza/Kilo)", "codigo_barra": "1000000000032", "precio_compra": 6500, "precio_venta": 9500, "stock_actual": 6, "stock_minimo": 1, "unidad_medida": "KILO" },
+      { "nombre": "Empanada de Pino / Queso Horneada", "codigo_barra": "1000000000049", "precio_compra": 1000, "precio_venta": 1800, "stock_actual": 12, "stock_minimo": 3, "unidad_medida": "UNIDAD" }
+    ]
+  },
+  {
+    "categoria": "Limpieza y Aseo del Hogar",
+    "productos": [
+      { "nombre": "Papel Higiénico Noble 4 unids", "codigo_barra": "7804000017788", "precio_compra": 1100, "precio_venta": 1700, "stock_actual": 14, "stock_minimo": 4, "unidad_medida": "UNIDAD" },
+      { "nombre": "Papel Higiénico Confort 4 unids", "codigo_barra": "7804000018899", "precio_compra": 1300, "precio_venta": 1950, "stock_actual": 12, "stock_minimo": 3, "unidad_medida": "UNIDAD" },
+      { "nombre": "Refresco en Polvo Zuko (Variedad)", "codigo_barra": "7804000019900", "precio_compra": 150, "precio_venta": 300, "stock_actual": 50, "stock_minimo": 10, "unidad_medida": "UNIDAD" },
+      { "nombre": "Lavaloza Brillina / Magistral", "codigo_barra": "7804000020011", "precio_compra": 900, "precio_venta": 1450, "stock_actual": 8, "stock_minimo": 2, "unidad_medida": "UNIDAD" },
+      { "nombre": "Pasta Dental Pepsodent", "codigo_barra": "7804000021122", "precio_compra": 850, "precio_venta": 1300, "stock_actual": 10, "stock_minimo": 3, "unidad_medida": "UNIDAD" }
+    ]
+  },
+  {
+    "categoria": "Abarrotes y No Perecibles",
+    "productos": [
+      { "nombre": "Aceite Vegetal Belmont 1L", "codigo_barra": "7803000022233", "precio_compra": 1500, "precio_venta": 2200, "stock_actual": 16, "stock_minimo": 4, "unidad_medida": "UNIDAD" },
+      { "nombre": "Azúcar Iansa Flor / Normal 1kg", "codigo_barra": "7803000023344", "precio_compra": 900, "precio_venta": 1350, "stock_actual": 20, "stock_minimo": 5, "unidad_medida": "UNIDAD" },
+      { "nombre": "Arroz La Patrona Grado 1 1kg", "codigo_barra": "7803000024455", "precio_compra": 950, "precio_venta": 1400, "stock_actual": 18, "stock_minimo": 5, "unidad_medida": "UNIDAD" },
+      { "nombre": "Sopa Ramen Maruchan Bowl", "codigo_barra": "7803000025566", "precio_compra": 600, "precio_venta": 1000, "stock_actual": 24, "stock_minimo": 6, "unidad_medida": "UNIDAD" },
+      { "nombre": "Salsa de Tomates San Remo/Sanz 200g", "codigo_barra": "7803000026677", "precio_compra": 350, "precio_venta": 600, "stock_actual": 30, "stock_minimo": 8, "unidad_medida": "UNIDAD" },
+      { "nombre": "Leche Condensada Leche Sur caneca", "codigo_barra": "7803000027788", "precio_compra": 800, "precio_venta": 1250, "stock_actual": 12, "stock_minimo": 3, "unidad_medida": "UNIDAD" }
+    ]
+  }
+]

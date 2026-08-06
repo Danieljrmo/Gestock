@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
-// Controladores para productos
+
+// Registrar un nuevo producto
 export const crearProducto = async (req, res) => {
     const { 
         nombre_producto, 
@@ -9,6 +10,7 @@ export const crearProducto = async (req, res) => {
         precio_venta, 
         stock_actual, 
         stock_minimo, 
+        unidad_medida,
         id_categoria 
     } = req.body;
 
@@ -16,12 +18,14 @@ export const crearProducto = async (req, res) => {
         const nuevoProducto = await prisma.productos.create({
             data: {
                 nombre_producto,
-                codigo_barra,
+                codigo_barra: codigo_barra || null,
                 precio_compra: parseFloat(precio_compra),
                 precio_venta: parseFloat(precio_venta),
-                stock_actual: parseInt(stock_actual),
-                stock_minimo: parseInt(stock_minimo),
-                id_categoria: parseInt(id_categoria)
+                stock_actual: stock_actual !== undefined ? parseFloat(stock_actual) : 0,
+                stock_minimo: stock_minimo !== undefined ? parseFloat(stock_minimo) : 0,
+                unidad_medida: unidad_medida || 'UNIDAD',
+                id_categoria: id_categoria ? parseInt(id_categoria) : null,
+                estado: 'activo'
             }
         });
         res.status(201).json({
@@ -39,15 +43,20 @@ export const obtenerProductos = async (req, res) => {
     try {
         const productos = await prisma.productos.findMany({
             include: {
-                categorias: true // Esto incluye toda la información de la tabla categorías vinculada
+                categorias: true
             }
         });
 
-        // Opcional: Podemos añadir una "etiqueta" de estado de stock en la respuesta
-        const productosConEstado = productos.map(p => ({
-            ...p,
-            estado_stock: p.stock_actual <= p.stock_minimo ? "ALERTA: Reabastecer" : "Normal"
-        }));
+        const productosConEstado = productos.map(p => {
+            const stockActual = parseFloat(p.stock_actual || 0);
+            const stockMinimo = parseFloat(p.stock_minimo || 0);
+            return {
+                ...p,
+                stock_actual: stockActual,
+                stock_minimo: stockMinimo,
+                estado_stock: stockActual <= stockMinimo ? "ALERTA: Reabastecer" : "Normal"
+            };
+        });
 
         res.json(productosConEstado);
     } catch (error) {
@@ -58,7 +67,7 @@ export const obtenerProductos = async (req, res) => {
 
 // Buscar productos por nombre o código de barra
 export const buscarProducto = async (req, res) => {
-    const { criterio } = req.query; // Recibimos lo que el usuario escribe
+    const { criterio } = req.query;
 
     try {
         const resultados = await prisma.productos.findMany({
@@ -78,7 +87,7 @@ export const buscarProducto = async (req, res) => {
 
 // Actualizar un producto existente (PUT)
 export const actualizarProducto = async (req, res) => {
-    const { id } = req.params; // Captura el :id limpio de la URL
+    const { id } = req.params;
     const { 
         nombre_producto, 
         codigo_barra, 
@@ -86,20 +95,22 @@ export const actualizarProducto = async (req, res) => {
         precio_venta, 
         stock_actual, 
         stock_minimo, 
+        unidad_medida,
         id_categoria 
     } = req.body;
 
     try {
         const productoActualizado = await prisma.productos.update({
-            where: { id_producto: parseInt(id) }, // Ajusta si en tu esquema es id_producto o id
+            where: { id_producto: parseInt(id) },
             data: {
                 nombre_producto,
-                codigo_barra,
+                codigo_barra: codigo_barra || null,
                 precio_compra: parseFloat(precio_compra),
                 precio_venta: parseFloat(precio_venta),
-                stock_actual: parseInt(stock_actual),
-                stock_minimo: parseInt(stock_minimo),
-                id_categoria: parseInt(id_categoria)
+                stock_actual: parseFloat(stock_actual),
+                stock_minimo: parseFloat(stock_minimo),
+                unidad_medida: unidad_medida || 'UNIDAD',
+                id_categoria: id_categoria ? parseInt(id_categoria) : null
             }
         });
 
@@ -118,11 +129,8 @@ export const eliminarProducto = async (req, res) => {
     const { id } = req.params;
 
     try {
-        // Si tu tabla 'productos' tiene una columna 'estado' o 'activo', 
-        // aquí harías un prisma.productos.update para cambiar a 'Inactivo' (Borrado lógico).
-        // Si no la tienes y requieres borrado físico directo:
         const productoEliminado = await prisma.productos.delete({
-            where: { id_producto: parseInt(id) } // Ajusta si en tu esquema es id_producto o id
+            where: { id_producto: parseInt(id) }
         });
 
         res.json({
@@ -131,7 +139,6 @@ export const eliminarProducto = async (req, res) => {
         });
     } catch (error) {
         console.error("Error al eliminar producto:", error);
-        // Si PostgreSQL frena la eliminación por FKs relacionales (ej: ya se vendió en una boleta)
         if (error.code === 'P2003') {
             return res.status(400).json({ 
                 mensaje: "No se puede eliminar físicamente este producto porque cuenta con registros asociados en el historial de ventas." 

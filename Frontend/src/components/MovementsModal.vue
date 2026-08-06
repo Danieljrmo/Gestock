@@ -1,11 +1,14 @@
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import axios from 'axios';
 import { useAuthStore } from '../stores/auth';
 
 const props = defineProps({
   show: Boolean,
-  productos: Array
+  productos: {
+    type: Array,
+    default: () => []
+  }
 });
 
 const emit = defineEmits(['close', 'saved']);
@@ -15,17 +18,40 @@ const errorMsg = ref('');
 const successMsg = ref('');
 const submitting = ref(false);
 
+// ESTADOS PARA BUSCADOR PREDICTIVO
+const busquedaProducto = ref('');
+const productoSeleccionado = ref(null);
+
 const movementForm = ref({
-  id_producto: '',
-  tipo_movimiento: 'Entrada', // Valor por defecto
+  tipo_movimiento: 'Entrada',
   cantidad: '',
   motivo: '',
-  id_proveedor: '' // Opcional por ahora
+  id_proveedor: ''
 });
 
+// Filtro predictivo dentro del modal
+const productosFiltradosModal = computed(() => {
+  if (!busquedaProducto.value.trim() || productoSeleccionado.value) return [];
+  const q = busquedaProducto.value.toLowerCase().trim();
+  return props.productos.filter(p => 
+    p.nombre_producto.toLowerCase().includes(q) ||
+    (p.codigo_barra && p.codigo_barra.includes(q))
+  );
+});
+
+const seleccionarProducto = (prod) => {
+  productoSeleccionado.value = prod;
+  busquedaProducto.value = prod.nombre_producto;
+};
+
+const limpiarSeleccionProducto = () => {
+  productoSeleccionado.value = null;
+  busquedaProducto.value = '';
+};
+
 const resetForm = () => {
+  limpiarSeleccionProducto();
   movementForm.value = {
-    id_producto: '',
     tipo_movimiento: 'Entrada',
     cantidad: '',
     motivo: '',
@@ -35,9 +61,21 @@ const resetForm = () => {
   successMsg.value = '';
 };
 
+// Limpia el formulario cuando el modal abre o cierra
+watch(() => props.show, (newVal) => {
+  if (newVal) {
+    resetForm();
+  }
+});
+
 const handleRegisterMovement = async () => {
-  if (!movementForm.value.id_producto || !movementForm.value.cantidad) {
-    errorMsg.value = 'Por favor, completa los campos obligatorios.';
+  if (!productoSeleccionado.value) {
+    errorMsg.value = 'Por favor, selecciona un producto del catálogo.';
+    return;
+  }
+
+  if (!movementForm.value.cantidad || parseFloat(movementForm.value.cantidad) <= 0) {
+    errorMsg.value = 'Por favor, ingresa una cantidad válida mayor a cero.';
     return;
   }
 
@@ -45,11 +83,12 @@ const handleRegisterMovement = async () => {
     submitting.value = true;
     errorMsg.value = '';
     
+    // Convertimos cantidad con parseFloat para soportar kilos fraccionados
     const payload = {
-      id_producto: parseInt(movementForm.value.id_producto),
+      id_producto: parseInt(productoSeleccionado.value.id_producto || productoSeleccionado.value.id),
       tipo_movimiento: movementForm.value.tipo_movimiento,
-      cantidad: parseInt(movementForm.value.cantidad),
-      motivo: movementForm.value.motivo.trim()
+      cantidad: parseFloat(movementForm.value.cantidad),
+      motivo: movementForm.value.motivo.trim() || (movementForm.value.tipo_movimiento === 'Entrada' ? 'Ingreso de Mercadería' : 'Ajuste de Merma')
     };
 
     await axios.post('http://localhost:4000/api/movimientos', payload, {
@@ -61,7 +100,7 @@ const handleRegisterMovement = async () => {
       emit('saved');
       emit('close');
       resetForm();
-    }, 1500);
+    }, 1200);
 
   } catch (error) {
     console.error('Error al registrar movimiento:', error);
@@ -84,20 +123,51 @@ const handleRegisterMovement = async () => {
       <div v-if="successMsg" class="mb-4 p-3 bg-green-50 border border-green-200 text-green-600 text-xs font-semibold rounded-xl">✅ {{ successMsg }}</div>
 
       <form @submit.prevent="handleRegisterMovement" class="space-y-4">
-        <div>
+        
+        <!-- BUSCADOR PREDICTIVO DE PRODUCTO -->
+        <div class="relative">
           <label class="block text-[11px] font-black tracking-wider uppercase text-gray-400 mb-2">Seleccionar Producto</label>
-          <select 
-            v-model="movementForm.id_producto" 
-            required
-            class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold focus:outline-none focus:border-[#00D2C4] bg-gray-50 text-gray-700"
+          <div class="relative">
+            <input 
+              v-model="busquedaProducto"
+              :readonly="!!productoSeleccionado"
+              type="text"
+              placeholder="Escribe nombre o SKU para buscar..."
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold focus:outline-none focus:border-[#00D2C4] bg-gray-50 pr-20"
+            />
+            <button 
+              v-if="productoSeleccionado" 
+              @click="limpiarSeleccionProducto" 
+              type="button"
+              class="absolute right-3 top-2.5 text-xs bg-gray-200 hover:bg-gray-300 text-gray-700 px-2 py-1 rounded-lg font-bold transition-all"
+            >
+              Cambiar
+            </button>
+          </div>
+
+          <!-- LISTA DESPLEGABLE CON RESULTADOS -->
+          <div 
+            v-if="productosFiltradosModal.length > 0" 
+            class="absolute z-20 left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl max-h-48 overflow-y-auto divide-y divide-gray-50"
           >
-            <option value="" disabled>Selecciona un artículo del catálogo...</option>
-            <option v-for="prod in productos" :key="prod.id_producto" :value="prod.id_producto">
-              {{ prod.nombre_producto }} (Stock actual: {{ prod.stock_actual }})
-            </option>
-          </select>
+            <div 
+              v-for="prod in productosFiltradosModal" 
+              :key="prod.id_producto || prod.id"
+              @click="seleccionarProducto(prod)"
+              class="p-3 hover:bg-cyan-50 cursor-pointer flex justify-between items-center text-xs"
+            >
+              <div class="flex flex-col">
+                <span class="font-bold text-[#0B192C]">{{ prod.nombre_producto }}</span>
+                <span class="text-[10px] text-gray-400">SKU: {{ prod.codigo_barra || 'S/N' }}</span>
+              </div>
+              <span class="text-xs font-black text-gray-600 bg-gray-100 px-2 py-1 rounded-md">
+                Stock: {{ prod.stock_actual }} {{ prod.unidad_medida === 'KILO' ? 'kg' : 'ud' }}
+              </span>
+            </div>
+          </div>
         </div>
 
+        <!-- TIPO DE OPERACIÓN -->
         <div>
           <label class="block text-[11px] font-black tracking-wider uppercase text-gray-400 mb-2">Tipo de Operación</label>
           <div class="grid grid-cols-2 gap-3">
@@ -122,18 +192,23 @@ const handleRegisterMovement = async () => {
           </div>
         </div>
 
+        <!-- CANTIDAD DINÁMICA (KILO VS UNIDAD) -->
         <div>
-          <label class="block text-[11px] font-black tracking-wider uppercase text-gray-400 mb-2">Cantidad (Unidades)</label>
+          <label class="block text-[11px] font-black tracking-wider uppercase text-gray-400 mb-2">
+            Cantidad {{ productoSeleccionado?.unidad_medida === 'KILO' ? '(Kilogramos)' : '(Unidades)' }}
+          </label>
           <input 
             v-model="movementForm.cantidad" 
             type="number" 
-            min="1" 
+            :step="productoSeleccionado?.unidad_medida === 'KILO' ? '0.001' : '1'"
+            :min="productoSeleccionado?.unidad_medida === 'KILO' ? '0.001' : '1'" 
             required 
-            placeholder="Ej: 12"
+            :placeholder="productoSeleccionado?.unidad_medida === 'KILO' ? 'Ej: 1.500' : 'Ej: 12'"
             class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold focus:outline-none focus:border-[#00D2C4] bg-gray-50"
           />
         </div>
 
+        <!-- MOTIVO / JUSTIFICACIÓN -->
         <div>
           <label class="block text-[11px] font-black tracking-wider uppercase text-gray-400 mb-2">Motivo o Justificación</label>
           <textarea 
