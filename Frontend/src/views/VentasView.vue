@@ -1,12 +1,21 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
+import { storeToRefs } from 'pinia';
+import { usePosStore } from '../stores/posStore'; // Ajusta la ruta a tu carpeta stores
+
+const posStore = usePosStore();
+
+// Extraemos las propiedades reactivas manteniendo su reactividad
+const { carrito, metodoPago } = storeToRefs(posStore);
+// Extraemos los métodos de la store
+const { vaciarCarrito, guardarPersistencia } = posStore;
 
 // --- ESTADOS REACTIVOS ---
 const productosBD = ref([]);            // Catálogo real desde el Backend
 const busqueda = ref('');               // Modelo para el buscador / lector barcode
-const carrito = ref([]);                // Ítems agregados a la venta actual
-const metodoPago = ref('Efectivo');     // Estado del método de pago
+//const carrito = ref([]);                // Ítems agregados a la venta actual
+//const metodoPago = ref('Efectivo');     // Estado del método de pago
 const cargandoVenta = ref(false);      // Loading spinner para el botón de cobro
 const mensajeExito = ref('');           // Feedback de venta registrada
 const mensajeError = ref('');           // Feedback de errores (ej. stock insuficiente)
@@ -55,7 +64,7 @@ const agregarAlCarrito = (producto) => {
   const esPesable = producto.unidad_medida === 'KILO';
 
   if (existe) {
-    const paso = esPesable ? 0.500 : 1; // Si es Kilo suma de 0.5 en 0.5 con botones
+    const paso = esPesable ? 0.500 : 1;
     if (existe.cantidad + paso > existe.stock_max) {
       mensajeError.value = `Stock máximo disponible alcanzado (${existe.stock_max} ${esPesable ? 'kg' : 'unids'}).`;
       return;
@@ -67,7 +76,7 @@ const agregarAlCarrito = (producto) => {
       id_producto: producto.id_producto,
       nombre: producto.nombre_producto,
       precio_venta: parseFloat(producto.precio_venta),
-      cantidad: 1, // Inicia en 1 (o 1.000 kg)
+      cantidad: 1,
       subtotal: parseFloat(producto.precio_venta),
       stock_max: stockDisponible,
       unidad_medida: producto.unidad_medida || 'UNIDAD'
@@ -75,6 +84,9 @@ const agregarAlCarrito = (producto) => {
   }
   
   busqueda.value = '';
+  
+  // Guardamos la adición en LocalStorage/Store
+  guardarPersistencia();
 };
 
 // Auto-agregar si el escáner detecta un código de barras exacto (Enter)
@@ -98,6 +110,8 @@ const incrementarCantidad = (item) => {
   }
   item.cantidad = nuevaCantidad;
   item.subtotal = Math.round(item.cantidad * item.precio_venta);
+
+  guardarPersistencia();
 };
 
 // DECREMENTAR CON BOTÓN (-)
@@ -109,6 +123,7 @@ const decrementarCantidad = (item) => {
   if (nuevaCantidad > 0) {
     item.cantidad = nuevaCantidad;
     item.subtotal = Math.round(item.cantidad * item.precio_venta);
+    guardarPersistencia();
   } else {
     eliminarDelCarrito(item.id_producto);
   }
@@ -130,15 +145,13 @@ const actualizarCantidadDirecta = (item, event) => {
   }
 
   item.subtotal = Math.round(item.cantidad * item.precio_venta);
+
+  guardarPersistencia();
 };
 
 const eliminarDelCarrito = (id_producto) => {
-  carrito.value = carrito.value.filter(item => item.id_producto !== id_producto);
-};
-
-const vaciarCarrito = () => {
-  carrito.value = [];
-  mensajeError.value = '';
+  posStore.carrito = posStore.carrito.filter(item => item.id_producto !== id_producto);
+  guardarPersistencia();
 };
 
 // --- CÁLCULOS FINANCIEROS DINÁMICOS (COMPUTED) ---

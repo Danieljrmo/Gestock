@@ -1,6 +1,8 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import axios from 'axios';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // ESTADOS DE PESTAÑA Y FILTROS
 const pestanaActiva = ref('ventas'); // 'ventas' | 'rotacion' | 'movimientos'
@@ -25,9 +27,116 @@ const datosRotacion = ref({ masVendidos: [], menosVendidos: [] });
 // DATOS HISTORIAL MOVIMIENTOS
 const historialMovimientos = ref([]);
 
-// Exportación limpia a PDF usando la ventana de impresión nativa del sistema
+// 1. GENERACIÓN PROFESIONAL DE PDF CON TABLAS DINÁMICAS Y SOPORTE DE KILOS/UNIDADES
 const exportarPDF = () => {
-  window.print();
+  const doc = new jsPDF();
+  const fechaGeneracion = new Date().toLocaleDateString('es-CL');
+
+  // Encabezado Corporativo
+  doc.setFontSize(18);
+  doc.setTextColor(11, 25, 44); // Color #0B192C
+  doc.text('GESTOCK - Reporte de Gestión', 14, 20);
+
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text(`Fecha de emisión: ${fechaGeneracion}`, 14, 26);
+
+  // A) SI ESTAMOS EN PESTAÑA VENTAS POR PERÍODO
+  if (pestanaActiva.value === 'ventas') {
+    doc.setFontSize(14);
+    doc.setTextColor(3, 181, 169);
+    doc.text(`Reporte de Ventas (${fechaInicio.value} al ${fechaFin.value})`, 14, 35);
+
+    doc.setFontSize(10);
+    doc.setTextColor(50);
+    doc.text(`Total Recaudado: $${(resumenVentas.value.metricas.totalVendido || 0).toLocaleString('es-CL')}`, 14, 43);
+    doc.text(`Neto Afecto: $${(resumenVentas.value.metricas.netoAfecto || 0).toLocaleString('es-CL')}`, 14, 49);
+    doc.text(`IVA Débito (19%): $${(resumenVentas.value.metricas.ivaTotal || 0).toLocaleString('es-CL')}`, 14, 55);
+    doc.text(`Transacciones Totales: ${resumenVentas.value.metricas.totalTransacciones || 0}`, 14, 61);
+
+    const tablaFilas = (resumenVentas.value.ventas || []).map(v => [
+      `#${v.id_venta}`,
+      new Date(v.fecha_venta).toLocaleString('es-CL'),
+      v.usuarios?.nombre_usuario || 'Admin',
+      v.metodo_pago,
+      `$${parseFloat(v.total).toLocaleString('es-CL')}`
+    ]);
+
+    autoTable(doc, {
+      startY: 67,
+      head: [['ID Venta', 'Fecha y Hora', 'Cajero', 'Método Pago', 'Monto Total']],
+      body: tablaFilas,
+      headStyles: { fillColor: [11, 25, 44] },
+      styles: { fontSize: 8 }
+    });
+  } 
+
+  // B) SI ESTAMOS EN PESTAÑA ROTACIÓN DE INVENTARIO
+  else if (pestanaActiva.value === 'rotacion') {
+    doc.setFontSize(14);
+    doc.setTextColor(16, 185, 129);
+    doc.text('Análisis ABC - Top Productos de Alta Rotación', 14, 35);
+
+    const masVendidosFilas = (datosRotacion.value.masVendidos || []).map(p => [
+      p.nombre_producto,
+      `${parseFloat(p.unidades_vendidas || 0)} ${p.unidad_medida === 'KILO' ? 'kg' : 'unids.'}`,
+      `$${parseFloat(p.total_recaudado || 0).toLocaleString('es-CL')}`
+    ]);
+
+    autoTable(doc, {
+      startY: 40,
+      head: [['Producto', 'Cant. Vendida', 'Recaudado']],
+      body: masVendidosFilas,
+      headStyles: { fillColor: [16, 185, 129] },
+      styles: { fontSize: 8 }
+    });
+
+    const finalY = (doc.lastAutoTable?.finalY || 100) + 12;
+
+    doc.setFontSize(14);
+    doc.setTextColor(217, 119, 6);
+    doc.text('Productos de Baja Rotación (Alerta de Stock Atrapado)', 14, finalY);
+
+    const menosVendidosFilas = (datosRotacion.value.menosVendidos || []).map(p => [
+      p.nombre_producto,
+      `${parseFloat(p.stock_actual || 0)} ${p.unidad_medida === 'KILO' ? 'kg' : 'unids.'}`,
+      `${parseFloat(p.unidades_vendidas || 0)} ${p.unidad_medida === 'KILO' ? 'kg' : 'unids.'}`
+    ]);
+
+    autoTable(doc, {
+      startY: finalY + 5,
+      head: [['Producto', 'Stock Físico', 'Ventas Acumuladas']],
+      body: menosVendidosFilas,
+      headStyles: { fillColor: [217, 119, 6] },
+      styles: { fontSize: 8 }
+    });
+  }
+
+  // C) SI ESTAMOS EN PESTAÑA HISTORIAL DE MOVIMIENTOS
+  else if (pestanaActiva.value === 'movimientos') {
+    doc.setFontSize(14);
+    doc.setTextColor(11, 25, 44);
+    doc.text('Bitácora de Auditoría de Inventario', 14, 35);
+
+    const movimientosFilas = (historialMovimientos.value || []).map(m => [
+      new Date(m.fecha_movimiento).toLocaleString('es-CL'),
+      m.productos?.nombre_producto || 'N/A',
+      m.tipo_movimiento,
+      `${parseFloat(m.cantidad)} ${m.productos?.unidad_medida === 'KILO' ? 'kg' : 'unids.'}`,
+      m.motivo || 'N/A',
+      m.usuarios?.nombre_usuario || 'Sistema'
+    ]);
+
+    autoTable(doc, {
+      startY: 40,
+      head: [['Fecha', 'Producto', 'Tipo Operación', 'Cantidad', 'Motivo', 'Responsable']],
+      body: movimientosFilas,
+      headStyles: { fillColor: [11, 25, 44] },
+      styles: { fontSize: 8 }
+    });
+  }
+
+  doc.save(`Gestock_Reporte_${pestanaActiva.value}_${fechaGeneracion.replace(/\//g, '-')}.pdf`);
 };
 
 // OBTENER REPORTE DE VENTAS
@@ -88,10 +197,8 @@ const cambiarPestana = (pestana) => {
 };
 
 // --- FUNCIONES DE EXPORTACIÓN A EXCEL (CSV) ---
-
-// Helper genérico para generar y descargar el archivo en el cliente
 const descargarArchivo = (contenido, nombreArchivo) => {
-  const blob = new Blob(['\uFEFF' + contenido], { type: 'text/csv;charset=utf-8;' }); // \uFEFF incluye el BOM UTF-8 para Excel
+  const blob = new Blob(['\uFEFF' + contenido], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
   link.setAttribute('href', url);
@@ -117,19 +224,21 @@ const exportarVentasExcel = () => {
   descargarArchivo(csv, `Gestock_Reporte_Ventas_${fechaInicio.value}_al_${fechaFin.value}.csv`);
 };
 
-// 2. Exportar Rotación de Productos (Alta / Baja)
+// 2. Exportar Rotación de Productos (Alta / Baja) - 👈 Actualizado con unidades/kg
 const exportarRotacionExcel = () => {
-  let csv = 'CATEGORIA_ROTACION;PRODUCTO;UNIDADES_VENDIDAS;RECAUDADO_STOCK\n';
+  let csv = 'CATEGORIA_ROTACION;PRODUCTO;CANTIDAD_VENDIDA;RECAUDADO_STOCK\n';
 
   if (datosRotacion.value.masVendidos) {
     datosRotacion.value.masVendidos.forEach(p => {
-      csv += `"ALTA ROTACION";"${p.nombre_producto}";"${p.unidades_vendidas}";"$${p.total_recaudado}"\n`;
+      const um = p.unidad_medida === 'KILO' ? 'kg' : 'unids.';
+      csv += `"ALTA ROTACION";"${p.nombre_producto}";"${parseFloat(p.unidades_vendidas || 0)} ${um}";"$${p.total_recaudado}"\n`;
     });
   }
 
   if (datosRotacion.value.menosVendidos) {
     datosRotacion.value.menosVendidos.forEach(p => {
-      csv += `"BAJA ROTACION";"${p.nombre_producto}";"${p.unidades_vendidas} (Stock: ${p.stock_actual})";"N/A"\n`;
+      const um = p.unidad_medida === 'KILO' ? 'kg' : 'unids.';
+      csv += `"BAJA ROTACION";"${p.nombre_producto}";"${parseFloat(p.unidades_vendidas || 0)} ${um} (Stock: ${p.stock_actual} ${um})";"N/A"\n`;
     });
   }
 
@@ -145,8 +254,9 @@ const exportarMovimientosExcel = () => {
   historialMovimientos.value.forEach(m => {
     const fecha = new Date(m.fecha_movimiento).toLocaleString('es-CL');
     const prod = m.productos?.nombre_producto || 'N/A';
+    const um = m.productos?.unidad_medida === 'KILO' ? 'kg' : 'unids.';
     const usuario = m.usuarios?.nombre_usuario || 'Sistema';
-    csv += `"${fecha}";"${prod}";"${m.tipo_movimiento}";"${m.cantidad}";"${m.motivo || 'N/A'}";"${usuario}"\n`;
+    csv += `"${fecha}";"${prod}";"${m.tipo_movimiento}";"${parseFloat(m.cantidad)} ${um}";"${m.motivo || 'N/A'}";"${usuario}"\n`;
   });
 
   descargarArchivo(csv, `Gestock_Bitacora_Movimientos_${hoy}.csv`);
@@ -196,44 +306,61 @@ onMounted(() => {
 
     <!-- PESTAÑA 1: VENTAS POR PERÍODO -->
     <div v-if="pestanaActiva === 'ventas'" class="space-y-6">
-      
-    <!-- CONTROLES DE FILTRO POR FECHA -->
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-wrap items-end gap-4">
-        <div>
-          <label class="block text-[11px] font-black uppercase text-gray-400 mb-1">Fecha Inicio</label>
-          <input v-model="fechaInicio" type="date" class="bg-slate-50 border border-gray-200 rounded-xl px-4 py-2 text-xs font-bold text-gray-700" />
-        </div>
-        <div>
-          <label class="block text-[11px] font-black uppercase text-gray-400 mb-1">Fecha Fin</label>
-          <input v-model="fechaFin" type="date" class="bg-slate-50 border border-gray-200 rounded-xl px-4 py-2 text-xs font-bold text-gray-700" />
-        </div>
-        <button 
-          @click="cargarReporteVentas" 
-          class="bg-[#03b5a9] text-white hover:bg-cyan-600 px-6 py-2.5 rounded-xl font-bold text-xs transition-all"
-        >
-          🔍 Filtrar Período
-        </button>   
-    </div>
+
+      <!-- CONTROLES DE FILTRO Y BOTONES DE DESCARGA (UNIFICADOS) -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-end justify-between gap-4">
     
-    <!-- GRUPO BOTONES DE DESCARGA (DERECHA) -->
-    <div class="flex gap-2">
-        <button 
+        <!-- LADO IZQUIERDO: FILTROS DE FECHA -->
+        <div class="flex flex-wrap items-end gap-4">
+          <div>
+            <label class="block text-[11px] font-black uppercase text-gray-400 mb-1">Fecha Inicio</label>
+            <input 
+              v-model="fechaInicio" 
+              type="date" 
+              class="bg-slate-50 border border-gray-200 rounded-xl px-4 py-2 text-xs font-bold text-gray-700 focus:outline-none focus:border-[#03b5a9]" 
+            />
+          </div>
+     
+
+          <div>
+            <label class="block text-[11px] font-black uppercase text-gray-400 mb-1">Fecha Fin</label>
+            <input 
+              v-model="fechaFin" 
+              type="date" 
+              class="bg-slate-50 border border-gray-200 rounded-xl px-4 py-2 text-xs font-bold text-gray-700 focus:outline-none focus:border-[#03b5a9]" 
+            />
+          </div> 
+
+          <button 
+            @click="cargarReporteVentas" 
+            class="bg-[#03b5a9] text-white hover:bg-cyan-600 px-6 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-95 shadow-xs"
+          >
+            🔍 Filtrar Período
+          </button> 
+        </div>
+    
+        <!-- LADO DERECHO: BOTONES DE EXPORTACIÓN -->
+        <div class="flex items-center gap-2">
+          <button 
             @click="exportarVentasExcel"
             :disabled="!resumenVentas.ventas.length"
             :class="!resumenVentas.ventas.length ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 shadow-sm'"
             class="px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5"
-        >
+          >
             Exportar Excel (.csv)
-        </button>
-        <button 
+          </button>
+
+          <button 
             @click="exportarPDF"
             :disabled="!resumenVentas.ventas.length"
             :class="!resumenVentas.ventas.length ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#DC143C] hover:bg-[#B22222] text-white active:scale-95 shadow-sm'"
             class="px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5"
-        >
+          >
             Exportar PDF
-        </button>
-    </div>
+          </button>
+        </div>
+
+      </div>
 
       <!-- CARDS KPI DE RESUMEN FINANCIERO -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -257,7 +384,7 @@ onMounted(() => {
 
       <!-- TABLA DE DETALLE DE VENTAS -->
       <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <h3 class="text-sm font-black text-[#0B192C] mb-4">📄 Registro Detallado de Boletas</h3>
+        <h3 class="text-sm font-black text-[#0B192C] mb-4">  Registro Detallado de Boletas</h3>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse text-xs">
             <thead>
@@ -285,76 +412,87 @@ onMounted(() => {
 
     <!-- PESTAÑA 2: ROTACIÓN DE PRODUCTOS (ALTA Y BAJA) -->
     <div v-if="pestanaActiva === 'rotacion'" class="space-y-6">
-  
-        <!-- BARRA DE ACCIONES Y EXPORTACIÓN -->
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
-            <div>
-                <h3 class="text-sm font-black text-[#0B192C]">  Análisis ABC de Rotación de Inventario</h3>
-                <p class="text-xs text-gray-400 font-medium">Clasificación de productos por volumen de venta y stock inmovilizado.</p>
-            </div>
-            <div class="flex gap-2">
-                <button 
-                    @click="exportarRotacionExcel"
-                    class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 shadow-sm"
-                >
-                    Exportar Excel (.csv)
-                </button>
-                <button 
-                    @click="exportarPDF"
-                    class="bg-[#DC143C] hover:bg-[#B22222] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 shadow-sm"
-                >
-                    Exportar PDF
-                </button>
-            </div>
-        </div>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- TOP MÁS VENDIDOS -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <h3 class="text-sm font-black text-emerald-600 mb-4 flex items-center gap-2">
-                    Top Productos de Alta Rotación (Alta Demanda)
-                </h3>
-                <table class="w-full text-left text-xs">
-                    <thead>
-                        <tr class="bg-slate-50 text-gray-400 font-bold uppercase border-b border-gray-100">
-                            <th class="p-3">Producto</th>
-                            <th class="p-3 text-center">Unids. Vendidas</th>
-                            <th class="p-3 text-right">Recaudado</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-50">
-                        <tr v-for="p in datosRotacion.masVendidos" :key="p.id_producto" class="hover:bg-slate-50/50">
-                            <td class="p-3 font-bold text-[#0B192C]">{{ p.nombre_producto }}</td>
-                            <td class="p-3 text-center"><span class="bg-emerald-50 text-emerald-600 font-black px-2 py-0.5 rounded-full">{{ p.unidades_vendidas }} unids.</span></td>
-                            <td class="p-3 text-right font-bold text-[#0B192C]">${{ parseFloat(p.total_recaudado).toLocaleString('es-CL') }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
 
-            <!-- TOP MENOS VENDIDOS -->
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <h3 class="text-sm font-black text-amber-600 mb-4 flex items-center gap-2">
-                    Productos de Baja Rotación (Alerta de Stock Atrapado)
-                </h3>
-                <table class="w-full text-left text-xs">
-                    <thead>
-                        <tr class="bg-slate-50 text-gray-400 font-bold uppercase border-b border-gray-100">
-                            <th class="p-3">Producto</th>
-                            <th class="p-3 text-center">Stock Físico</th>
-                            <th class="p-3 text-right">Ventas Acumuladas</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-50">
-                        <tr v-for="p in datosRotacion.menosVendidos" :key="p.id_producto" class="hover:bg-slate-50/50">
-                            <td class="p-3 font-bold text-[#0B192C]">{{ p.nombre_producto }}</td>
-                            <td class="p-3 text-center"><span class="bg-amber-50 text-amber-600 font-bold px-2 py-0.5 rounded-full">{{ p.stock_actual }} en estante</span></td>
-                            <td class="p-3 text-right font-bold text-gray-500">{{ p.unidades_vendidas }} unids.</td>
-                        </tr>
-                    </tbody>
-                </table>
+      <!-- BARRA DE ACCIONES Y EXPORTACIÓN -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
+          <div>
+              <h3 class="text-sm font-black text-[#0B192C]">  Análisis ABC de Rotación de Inventario</h3>
+              <p class="text-xs text-gray-400 font-medium">Clasificación de productos por volumen de venta y stock inmovilizado.</p>
+          </div>
+          <div class="flex gap-2">
+              <button 
+                @click="exportarRotacionExcel"
+                class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 shadow-sm"
+              >
+                Exportar Excel (.csv)
+              </button>
+              <button 
+                @click="exportarPDF"
+                class="bg-[#DC143C] hover:bg-[#B22222] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 shadow-sm"
+              >
+                Exportar PDF
+              </button>
             </div>
+          </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- TOP MÁS VENDIDOS -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h3 class="text-sm font-black text-emerald-600 mb-4 flex items-center gap-2">
+                Top Productos de Alta Rotación (Alta Demanda)
+            </h3>
+            <table class="w-full text-left text-xs">
+                <thead>
+                    <tr class="bg-slate-50 text-gray-400 font-bold uppercase border-b border-gray-100">
+                        <th class="p-3">Producto</th>
+                        <th class="p-3 text-center">Cant. Vendida</th>
+                        <th class="p-3 text-right">Recaudado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    <tr v-for="p in datosRotacion.masVendidos" :key="p.id_producto" class="hover:bg-slate-50/50">
+                        <td class="p-3 font-bold text-[#0B192C]">{{ p.nombre_producto }}</td>
+                        <td class="p-3 text-center">
+                            <span class="bg-emerald-50 text-emerald-600 font-black px-2 py-0.5 rounded-full">
+                                {{ parseFloat(p.unidades_vendidas || 0) }} {{ p.unidad_medida === 'KILO' ? 'kg' : 'unids.' }}
+                            </span>
+                        </td>
+                        <td class="p-3 text-right font-bold text-[#0B192C]">${{ parseFloat(p.total_recaudado).toLocaleString('es-CL') }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- TOP MENOS VENDIDOS -->
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+            <h3 class="text-sm font-black text-amber-600 mb-4 flex items-center gap-2">
+                Productos de Baja Rotación (Alerta de Stock Atrapado)
+            </h3>
+            <table class="w-full text-left text-xs">
+                <thead>
+                    <tr class="bg-slate-50 text-gray-400 font-bold uppercase border-b border-gray-100">
+                        <th class="p-3">Producto</th>
+                        <th class="p-3 text-center">Stock Físico</th>
+                        <th class="p-3 text-right">Ventas Acumuladas</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    <tr v-for="p in datosRotacion.menosVendidos" :key="p.id_producto" class="hover:bg-slate-50/50">
+                        <td class="p-3 font-bold text-[#0B192C]">{{ p.nombre_producto }}</td>
+                        <td class="p-3 text-center">
+                            <span class="bg-amber-50 text-amber-600 font-bold px-2 py-0.5 rounded-full">
+                                {{ parseFloat(p.stock_actual || 0) }} {{ p.unidad_medida === 'KILO' ? 'kg en estante' : 'en estante' }}
+                            </span>
+                        </td>
+                        <td class="p-3 text-right font-bold text-gray-500">
+                            {{ parseFloat(p.unidades_vendidas || 0) }} {{ p.unidad_medida === 'KILO' ? 'kg' : 'unids.' }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
+</div>
 
     <!-- PESTAÑA 3: HISTORIAL DE MOVIMIENTOS -->
     <div v-if="pestanaActiva === 'movimientos'" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">

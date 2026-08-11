@@ -24,7 +24,12 @@ export const getVentasPorPeriodo = async (req, res) => {
                 },
                 detalle_venta: {
                     include: {
-                        productos: { select: { nombre_producto: true } }
+                        productos: { 
+                            select: { 
+                                nombre_producto: true,
+                                unidad_medida: true // 👈 Agregado para reportes detallados
+                            } 
+                        }
                     }
                 }
             },
@@ -70,18 +75,25 @@ export const getRotacionProductos = async (req, res) => {
             }
         });
 
-        // Hidratamos con los nombres y categorías de los productos
+        // Hidratamos con los nombres, categorías y unidad de medida de los productos
         const rankingCompleto = await Promise.all(
             agruparDetalles.map(async (item) => {
                 const prod = await prisma.productos.findUnique({
                     where: { id_producto: item.id_producto },
-                    select: { nombre_producto: true, codigo_barra: true, stock_actual: true, precio_venta: true }
+                    select: { 
+                        nombre_producto: true, 
+                        codigo_barra: true, 
+                        stock_actual: true, 
+                        precio_venta: true,
+                        unidad_medida: true // 👈 AQUÍ ESTABA LA CLAVE
+                    }
                 });
                 return {
                     id_producto: item.id_producto,
                     nombre_producto: prod?.nombre_producto || 'Desconocido',
                     codigo_barra: prod?.codigo_barra || 'N/A',
                     stock_actual: prod?.stock_actual || 0,
+                    unidad_medida: prod?.unidad_medida || 'UNIDAD', // 👈 Se envía la unidad al Frontend
                     unidades_vendidas: item._sum.cantidad || 0,
                     total_recaudado: item._sum.subtotal || 0,
                     num_transacciones: item._count.id_venta
@@ -110,7 +122,13 @@ export const getHistorialMovimientos = async (req, res) => {
     try {
         const movimientos = await prisma.movimientos_inventario.findMany({
             include: {
-                productos: { select: { nombre_producto: true, codigo_barra: true } },
+                productos: { 
+                    select: { 
+                        nombre_producto: true, 
+                        codigo_barra: true,
+                        unidad_medida: true // 👈 Agregado para historial
+                    } 
+                },
                 usuarios: { select: { nombre_usuario: true } },
                 proveedores: { select: { nombre: true } }
             },

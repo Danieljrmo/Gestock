@@ -1,33 +1,35 @@
 <template>
   <div class="space-y-6">
-    <!-- BLOQUE 1: Encabezado y Botones de Acción -->
-    <div class="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+    <!-- BLOQUE 1: Encabezado y Botones al estilo Módulo Reportes -->
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+      <!-- Título y Subtítulo estilo Reportes -->
       <div>
-        <h3 class="text-lg font-bold text-[#0B192C]">Gestión de Productos</h3>
-        <p class="text-sm text-gray-400">Catálogo general, control de precios y alertas de stock en Gestock</p>
+        <h3 class="text-xl font-extrabold text-[#0B192C]">Gestión de Productos</h3>
+        <p class="text-xs text-gray-400 mt-0.5">Catálogo general, control de precios y alertas de stock en Gestock.</p>
       </div>
 
-      <div class="flex gap-3">
-        <!-- Botón para Categorías -->
+      <!-- Barra gris contenedora para los 3 botones uniformes -->
+      <div class="bg-slate-100 p-1.5 rounded-2xl flex flex-col sm:flex-row items-center gap-2.5 w-full">
+        <!-- Botón 1: Nueva Categoría -->
         <button 
           @click="showCategoryModal = true"
-          class="bg-[#064a74] text-white hover:bg-blue-900 font-bold px-5 py-3 rounded-xl transition-all text-sm flex items-center gap-2 active:scale-95 shadow-lg shadow-blue-900/10"
+          class="w-full flex-1 bg-[#0B192C] text-white hover:bg-blue-900 font-bold px-4 py-2.5 rounded-xl transition-all text-xs md:text-sm flex items-center justify-center gap-2 shadow-md active:scale-95"
         >
           <span>📁</span> Nueva Categoría
         </button>
 
-        <!-- Botón para Movimientos -->
+        <!-- Botón 2: Registrar Movimiento -->
         <button 
           @click="showMovementModal = true"
-          class="bg-[#064a74] text-white hover:bg-blue-900 font-bold px-5 py-3 rounded-xl transition-all text-sm flex items-center gap-2 active:scale-95 shadow-lg shadow-blue-900/10"
+          class="w-full flex-1 bg-[#0B192C] text-white hover:bg-blue-900 font-bold px-4 py-2.5 rounded-xl transition-all text-xs md:text-sm flex items-center justify-center gap-2 shadow-md active:scale-95"
         >
           <span>🔄</span> Registrar Movimiento
         </button>
 
-        <!-- Botón para Producto -->
+        <!-- Botón 3: Nuevo Producto -->
         <button 
           @click="openCreateModal"
-          class="bg-[#064a74] text-white hover:bg-blue-900 font-bold px-5 py-3 rounded-xl transition-all text-sm flex items-center gap-2 active:scale-95 shadow-lg shadow-blue-900/10"
+          class="w-full flex-1 bg-[#0B192C] text-white hover:bg-blue-900 font-bold px-4 py-2.5 rounded-xl transition-all text-xs md:text-sm flex items-center justify-center gap-2 shadow-md active:scale-95"
         >
           <span>➕</span> Nuevo Producto
         </button>
@@ -321,36 +323,40 @@
             </select>
           </div>
 
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- STOCK INICIAL Y ALERTA STOCK MÍNIMO (CORREGIDO Y DINÁMICO) -->
+          <div class="grid grid-cols-2 gap-4">
+            <!-- Stock Inicial -->
             <div>
               <label class="block text-[11px] font-black tracking-wider uppercase text-gray-400 mb-2">
                 Stock Inicial {{ productForm.unidad_medida === 'KILO' ? '(Kg)' : '(Unidades)' }}
               </label>
               <input 
-                v-model="productForm.stock_actual"
+                v-model="productForm.stock_actual" 
                 type="number" 
                 :step="productForm.unidad_medida === 'KILO' ? '0.001' : '1'"
-                :min="0"
-                required
-                :placeholder="productForm.unidad_medida === 'KILO' ? '15.5' : '24'"
-                class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold focus:outline-none focus:border-[#00D2C4] transition-all bg-gray-50 focus:bg-white"
+                :min="productForm.unidad_medida === 'KILO' ? '0.001' : '0'"
+                required 
+                :placeholder="productForm.unidad_medida === 'KILO' ? 'Ej: 10.500' : 'Ej: 30'"
+                class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold focus:outline-none focus:border-[#00D2C4] bg-gray-50 text-gray-700"
               />
             </div>
+
+            <!-- Alerta Stock Mínimo -->
             <div>
               <label class="block text-[11px] font-black tracking-wider uppercase text-gray-400 mb-2">
                 Alerta Stock Mínimo {{ productForm.unidad_medida === 'KILO' ? '(Kg)' : '(Unidades)' }}
               </label>
               <input 
-                v-model="productForm.stock_minimo"
+                v-model="productForm.stock_minimo" 
                 type="number" 
                 :step="productForm.unidad_medida === 'KILO' ? '0.001' : '1'"
-                :min="0.001"
-                required
-                :placeholder="productForm.unidad_medida === 'KILO' ? '2.5' : '5'"
-                class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold focus:outline-none focus:border-[#00D2C4] transition-all bg-gray-50 focus:bg-white"
+                :min="productForm.unidad_medida === 'KILO' ? '0.001' : '1'"
+                required 
+                :placeholder="productForm.unidad_medida === 'KILO' ? 'Ej: 1.000' : 'Ej: 5'"
+                class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold focus:outline-none focus:border-[#00D2C4] bg-gray-50 text-gray-700"
               />
             </div>
-          </div> 
+          </div>
 
           <div class="flex justify-end gap-3 pt-5 border-t border-gray-100">
             <button 
