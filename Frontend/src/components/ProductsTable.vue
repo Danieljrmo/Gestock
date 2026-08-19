@@ -9,7 +9,9 @@
       </div>
 
       <!-- Barra contenedora para los 3 botones uniformes -->
-      <div class="bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center gap-2.5 w-full">
+      <div 
+        v-if="authStore.user?.rol?.toUpperCase().startsWith('ADMIN')"
+        class="bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center gap-2.5 w-full">
         <!-- Botón 1: Nueva Categoría -->
         <button 
           @click="showCategoryModal = true"
@@ -76,6 +78,7 @@
       
           <!-- Botón para eliminar categoría -->
           <button 
+            v-if="authStore.user?.rol?.toUpperCase().startsWith('ADMIN')"
             @click="confirmarEliminarCategoria(cat)"
             class="p-1 text-slate-500 hover:text-red-400 rounded-md transition-colors"
             title="Eliminar Categoría"
@@ -108,7 +111,12 @@
               <th class="p-5 text-xs font-bold uppercase tracking-widest text-slate-400">P. Compra</th>
               <th class="p-5 text-xs font-bold uppercase tracking-widest text-slate-400">P. Venta</th>
               <th class="p-5 text-xs font-bold uppercase tracking-widest text-slate-400">Stock Actual</th>
-              <th class="p-5 text-xs font-bold uppercase tracking-widest text-slate-400 text-center">Acciones</th>
+              <th 
+                v-if="authStore.user?.rol?.toUpperCase().startsWith('ADMIN')"
+                class="p-5 text-xs font-bold uppercase tracking-widest text-slate-400 text-center"
+              >
+                Acciones
+              </th>
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-800 text-sm font-medium text-slate-300">
@@ -163,7 +171,10 @@
                 </span>
               </td>
 
-              <td class="p-5 text-center">
+              <td 
+                v-if="authStore.user?.rol?.toUpperCase().startsWith('ADMIN')"
+                class="p-5 text-center"
+              >
                 <div class="flex items-center justify-center gap-2">
                   <button 
                     @click="openEditModal(prod)"
