@@ -268,35 +268,34 @@ onMounted(() => {
 </script>
 
 <template>
-
-  <div class="space-y-6 animate-fade-in">
+  <div class="space-y-6">
     
     <!-- HEADER Y PESTAÑAS DE NAVEGACIÓN -->
-    <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-wrap justify-between items-center gap-4">
+    <div class="bg-[#0D1B2E] p-6 rounded-2xl border border-slate-800 flex flex-wrap justify-between items-center gap-4">
       <div>
-        <h2 class="text-xl font-black text-[#0B192C]">Business Intelligence & Reportes</h2>
-        <p class="text-xs text-gray-400 font-medium">Rotacion de stock y análisis transaccional para toma de decisiones.</p>
+        <h2 class="text-xl font-black text-white">Business Intelligence & Reportes</h2>
+        <p class="text-xs text-slate-400 font-medium">Rotación de stock y análisis transaccional para toma de decisiones.</p>
       </div>
 
       <!-- BOTONES DE PESTAÑAS -->
-      <div class="flex gap-2 bg-slate-100 p-1.5 rounded-xl text-xs font-bold">
+      <div class="flex gap-2 bg-slate-900 p-1.5 rounded-xl text-xs font-bold border border-slate-800">
         <button 
           @click="cambiarPestana('ventas')"
-          :class="pestanaActiva === 'ventas' ? 'bg-white text-[#0B192C] shadow-sm' : 'text-gray-500 hover:text-gray-800'"
-          class="px-4 py-2 rounded-[#00D2C4] rounded-lg transition-all"
+          :class="pestanaActiva === 'ventas' ? 'bg-[#00D2C4] text-[#0B192C] shadow-sm' : 'text-slate-400 hover:text-white'"
+          class="px-4 py-2 rounded-lg transition-all"
         >
           📈 Ventas por Período
         </button>
         <button 
           @click="cambiarPestana('rotacion')"
-          :class="pestanaActiva === 'rotacion' ? 'bg-white text-[#0B192C] shadow-sm' : 'text-gray-500 hover:text-gray-800'"
+          :class="pestanaActiva === 'rotacion' ? 'bg-[#00D2C4] text-[#0B192C] shadow-sm' : 'text-slate-400 hover:text-white'"
           class="px-4 py-2 rounded-lg transition-all"
         >
            🔄 Rotación (Alta/Baja)
         </button>
         <button 
           @click="cambiarPestana('movimientos')"
-          :class="pestanaActiva === 'movimientos' ? 'bg-white text-[#0B192C] shadow-sm' : 'text-gray-500 hover:text-gray-800'"
+          :class="pestanaActiva === 'movimientos' ? 'bg-[#00D2C4] text-[#0B192C] shadow-sm' : 'text-slate-400 hover:text-white'"
           class="px-4 py-2 rounded-lg transition-all"
         >
            🕒 Historial de Movimientos
@@ -307,44 +306,40 @@ onMounted(() => {
     <!-- PESTAÑA 1: VENTAS POR PERÍODO -->
     <div v-if="pestanaActiva === 'ventas'" class="space-y-6">
 
-      <!-- CONTROLES DE FILTRO Y BOTONES DE DESCARGA (UNIFICADOS) -->
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-end justify-between gap-4">
-    
-        <!-- LADO IZQUIERDO: FILTROS DE FECHA -->
+      <!-- CONTROLES DE FILTRO -->
+      <div class="bg-[#0D1B2E] p-6 rounded-2xl border border-slate-800 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div class="flex flex-wrap items-end gap-4">
           <div>
-            <label class="block text-[11px] font-black uppercase text-gray-400 mb-1">Fecha Inicio</label>
+            <label class="block text-[11px] font-black uppercase text-slate-400 mb-1">Fecha Inicio</label>
             <input 
               v-model="fechaInicio" 
               type="date" 
-              class="bg-slate-50 border border-gray-200 rounded-xl px-4 py-2 text-xs font-bold text-gray-700 focus:outline-none focus:border-[#03b5a9]" 
+              class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-xs font-bold text-white focus:outline-none focus:border-[#00D2C4]" 
             />
           </div>
-     
 
           <div>
-            <label class="block text-[11px] font-black uppercase text-gray-400 mb-1">Fecha Fin</label>
+            <label class="block text-[11px] font-black uppercase text-slate-400 mb-1">Fecha Fin</label>
             <input 
               v-model="fechaFin" 
               type="date" 
-              class="bg-slate-50 border border-gray-200 rounded-xl px-4 py-2 text-xs font-bold text-gray-700 focus:outline-none focus:border-[#03b5a9]" 
+              class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-xs font-bold text-white focus:outline-none focus:border-[#00D2C4]" 
             />
           </div> 
 
           <button 
             @click="cargarReporteVentas" 
-            class="bg-[#03b5a9] text-white hover:bg-cyan-600 px-6 py-2.5 rounded-xl font-bold text-xs transition-all active:scale-95 shadow-xs"
+            class="bg-[#00D2C4] text-[#0B192C] hover:bg-[#00b8ac] px-6 py-2.5 rounded-xl font-black text-xs transition-all active:scale-95 shadow-xs"
           >
             🔍 Filtrar Período
           </button> 
         </div>
     
-        <!-- LADO DERECHO: BOTONES DE EXPORTACIÓN -->
         <div class="flex items-center gap-2">
           <button 
             @click="exportarVentasExcel"
             :disabled="!resumenVentas.ventas.length"
-            :class="!resumenVentas.ventas.length ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 shadow-sm'"
+            :class="!resumenVentas.ventas.length ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 shadow-sm'"
             class="px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5"
           >
             Exportar Excel (.csv)
@@ -353,42 +348,41 @@ onMounted(() => {
           <button 
             @click="exportarPDF"
             :disabled="!resumenVentas.ventas.length"
-            :class="!resumenVentas.ventas.length ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-[#DC143C] hover:bg-[#B22222] text-white active:scale-95 shadow-sm'"
+            :class="!resumenVentas.ventas.length ? 'bg-slate-800 text-slate-600 cursor-not-allowed' : 'bg-[#DC143C] hover:bg-[#B22222] text-white active:scale-95 shadow-sm'"
             class="px-4 py-2.5 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5"
           >
             Exportar PDF
           </button>
         </div>
-
       </div>
 
       <!-- CARDS KPI DE RESUMEN FINANCIERO -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          <p class="text-[11px] font-black uppercase text-gray-400">Total Recaudado (Bruto)</p>
-          <p class="text-2xl font-black text-[#0B192C] mt-1">${{ resumenVentas.metricas.totalVendido.toLocaleString('es-CL') }}</p>
+        <div class="bg-[#0D1B2E] p-5 rounded-2xl border border-slate-800">
+          <p class="text-[11px] font-black uppercase text-slate-400">Total Recaudado (Bruto)</p>
+          <p class="text-2xl font-black text-white mt-1">${{ resumenVentas.metricas.totalVendido.toLocaleString('es-CL') }}</p>
         </div>
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          <p class="text-[11px] font-black uppercase text-gray-400">Neto Afecto</p>
-          <p class="text-2xl font-black text-gray-600 mt-1">${{ resumenVentas.metricas.netoAfecto.toLocaleString('es-CL') }}</p>
+        <div class="bg-[#0D1B2E] p-5 rounded-2xl border border-slate-800">
+          <p class="text-[11px] font-black uppercase text-slate-400">Neto Afecto</p>
+          <p class="text-2xl font-black text-slate-300 mt-1">${{ resumenVentas.metricas.netoAfecto.toLocaleString('es-CL') }}</p>
         </div>
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          <p class="text-[11px] font-black uppercase text-gray-400">IVA Débito (19%)</p>
-          <p class="text-2xl font-black text-cyan-600 mt-1">${{ resumenVentas.metricas.ivaTotal.toLocaleString('es-CL') }}</p>
+        <div class="bg-[#0D1B2E] p-5 rounded-2xl border border-slate-800">
+          <p class="text-[11px] font-black uppercase text-slate-400">IVA Débito (19%)</p>
+          <p class="text-2xl font-black text-[#00D2C4] mt-1">${{ resumenVentas.metricas.ivaTotal.toLocaleString('es-CL') }}</p>
         </div>
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-          <p class="text-[11px] font-black uppercase text-gray-400">N° Transacciones</p>
-          <p class="text-2xl font-black text-[#0B192C] mt-1">{{ resumenVentas.metricas.totalTransacciones }} Ventas</p>
+        <div class="bg-[#0D1B2E] p-5 rounded-2xl border border-slate-800">
+          <p class="text-[11px] font-black uppercase text-slate-400">N° Transacciones</p>
+          <p class="text-2xl font-black text-white mt-1">{{ resumenVentas.metricas.totalTransacciones }} Ventas</p>
         </div>
       </div>
 
-      <!-- TABLA DE DETALLE DE VENTAS -->
-      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <h3 class="text-sm font-black text-[#0B192C] mb-4">  Registro Detallado de Boletas</h3>
+      <!-- TABLA DETALLE DE VENTAS -->
+      <div class="bg-[#0D1B2E] p-6 rounded-2xl border border-slate-800">
+        <h3 class="text-sm font-black text-white mb-4">Registro Detallado de Boletas</h3>
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse text-xs">
             <thead>
-              <tr class="bg-slate-50 text-gray-400 font-bold uppercase border-b border-gray-100">
+              <tr class="bg-slate-900/80 text-slate-400 font-bold uppercase border-b border-slate-800">
                 <th class="p-3">ID Venta</th>
                 <th class="p-3">Fecha y Hora</th>
                 <th class="p-3">Cajero</th>
@@ -396,13 +390,13 @@ onMounted(() => {
                 <th class="p-3 text-right">Monto Total</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-50 font-medium text-gray-700">
-              <tr v-for="v in resumenVentas.ventas" :key="v.id_venta" class="hover:bg-slate-50/50">
-                <td class="p-3 font-bold text-[#0B192C]">#{{ v.id_venta }}</td>
+            <tbody class="divide-y divide-slate-800 font-medium text-slate-300">
+              <tr v-for="v in resumenVentas.ventas" :key="v.id_venta" class="hover:bg-slate-800/50">
+                <td class="p-3 font-bold text-white">#{{ v.id_venta }}</td>
                 <td class="p-3">{{ new Date(v.fecha_venta).toLocaleString('es-CL') }}</td>
                 <td class="p-3">{{ v.usuarios?.nombre_usuario || 'Admin' }}</td>
-                <td class="p-3"><span class="bg-gray-100 px-2 py-0.5 rounded text-[10px] font-bold uppercase">{{ v.metodo_pago }}</span></td>
-                <td class="p-3 text-right font-black text-[#0B192C]">${{ parseFloat(v.total).toLocaleString('es-CL') }}</td>
+                <td class="p-3"><span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase border border-slate-700">{{ v.metodo_pago }}</span></td>
+                <td class="p-3 text-right font-black text-[#00D2C4]">${{ parseFloat(v.total).toLocaleString('es-CL') }}</td>
               </tr>
             </tbody>
           </table>
@@ -410,141 +404,127 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- PESTAÑA 2: ROTACIÓN DE PRODUCTOS (ALTA Y BAJA) -->
+    <!-- PESTAÑA 2: ROTACIÓN DE PRODUCTOS -->
     <div v-if="pestanaActiva === 'rotacion'" class="space-y-6">
+      <div class="bg-[#0D1B2E] p-4 rounded-2xl border border-slate-800 flex justify-between items-center">
+        <div>
+          <h3 class="text-sm font-black text-white">Análisis ABC de Rotación de Inventario</h3>
+          <p class="text-xs text-slate-400 font-medium">Clasificación de productos por volumen de venta y stock inmovilizado.</p>
+        </div>
+        <div class="flex gap-2">
+          <button @click="exportarRotacionExcel" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 shadow-sm">
+            Exportar Excel (.csv)
+          </button>
+          <button @click="exportarPDF" class="bg-[#DC143C] hover:bg-[#B22222] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 shadow-sm">
+            Exportar PDF
+          </button>
+        </div>
+      </div>
 
-      <!-- BARRA DE ACCIONES Y EXPORTACIÓN -->
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
-          <div>
-              <h3 class="text-sm font-black text-[#0B192C]">  Análisis ABC de Rotación de Inventario</h3>
-              <p class="text-xs text-gray-400 font-medium">Clasificación de productos por volumen de venta y stock inmovilizado.</p>
-          </div>
-          <div class="flex gap-2">
-              <button 
-                @click="exportarRotacionExcel"
-                class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 shadow-sm"
-              >
-                Exportar Excel (.csv)
-              </button>
-              <button 
-                @click="exportarPDF"
-                class="bg-[#DC143C] hover:bg-[#B22222] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 shadow-sm"
-              >
-                Exportar PDF
-              </button>
-            </div>
-          </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- TOP MÁS VENDIDOS -->
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h3 class="text-sm font-black text-emerald-600 mb-4 flex items-center gap-2">
-                Top Productos de Alta Rotación (Alta Demanda)
-            </h3>
-            <table class="w-full text-left text-xs">
-                <thead>
-                    <tr class="bg-slate-50 text-gray-400 font-bold uppercase border-b border-gray-100">
-                        <th class="p-3">Producto</th>
-                        <th class="p-3 text-center">Cant. Vendida</th>
-                        <th class="p-3 text-right">Recaudado</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-50">
-                    <tr v-for="p in datosRotacion.masVendidos" :key="p.id_producto" class="hover:bg-slate-50/50">
-                        <td class="p-3 font-bold text-[#0B192C]">{{ p.nombre_producto }}</td>
-                        <td class="p-3 text-center">
-                            <span class="bg-emerald-50 text-emerald-600 font-black px-2 py-0.5 rounded-full">
-                                {{ parseFloat(p.unidades_vendidas || 0) }} {{ p.unidad_medida === 'KILO' ? 'kg' : 'unids.' }}
-                            </span>
-                        </td>
-                        <td class="p-3 text-right font-bold text-[#0B192C]">${{ parseFloat(p.total_recaudado).toLocaleString('es-CL') }}</td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="bg-[#0D1B2E] p-6 rounded-2xl border border-slate-800">
+          <h3 class="text-sm font-black text-emerald-400 mb-4 flex items-center gap-2">
+            Top Productos de Alta Rotación (Alta Demanda)
+          </h3>
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="bg-slate-900/80 text-slate-400 font-bold uppercase border-b border-slate-800">
+                <th class="p-3">Producto</th>
+                <th class="p-3 text-center">Cant. Vendida</th>
+                <th class="p-3 text-right">Recaudado</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-300">
+              <tr v-for="p in datosRotacion.masVendidos" :key="p.id_producto" class="hover:bg-slate-800/50">
+                <td class="p-3 font-bold text-white">{{ p.nombre_producto }}</td>
+                <td class="p-3 text-center">
+                  <span class="bg-emerald-950/50 text-emerald-400 border border-emerald-800/40 font-black px-2 py-0.5 rounded-full">
+                    {{ parseFloat(p.unidades_vendidas || 0) }} {{ p.unidad_medida === 'KILO' ? 'kg' : 'unids.' }}
+                  </span>
+                </td>
+                <td class="p-3 text-right font-bold text-[#00D2C4]">${{ parseFloat(p.total_recaudado).toLocaleString('es-CL') }}</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
         <!-- TOP MENOS VENDIDOS -->
-        <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-            <h3 class="text-sm font-black text-amber-600 mb-4 flex items-center gap-2">
-                Productos de Baja Rotación (Alerta de Stock Atrapado)
-            </h3>
-            <table class="w-full text-left text-xs">
-                <thead>
-                    <tr class="bg-slate-50 text-gray-400 font-bold uppercase border-b border-gray-100">
-                        <th class="p-3">Producto</th>
-                        <th class="p-3 text-center">Stock Físico</th>
-                        <th class="p-3 text-right">Ventas Acumuladas</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-50">
-                    <tr v-for="p in datosRotacion.menosVendidos" :key="p.id_producto" class="hover:bg-slate-50/50">
-                        <td class="p-3 font-bold text-[#0B192C]">{{ p.nombre_producto }}</td>
-                        <td class="p-3 text-center">
-                            <span class="bg-amber-50 text-amber-600 font-bold px-2 py-0.5 rounded-full">
-                                {{ parseFloat(p.stock_actual || 0) }} {{ p.unidad_medida === 'KILO' ? 'kg en estante' : 'en estante' }}
-                            </span>
-                        </td>
-                        <td class="p-3 text-right font-bold text-gray-500">
-                            {{ parseFloat(p.unidades_vendidas || 0) }} {{ p.unidad_medida === 'KILO' ? 'kg' : 'unids.' }}
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+        <div class="bg-[#0D1B2E] p-6 rounded-2xl border border-slate-800">
+          <h3 class="text-sm font-black text-amber-400 mb-4 flex items-center gap-2">
+            Productos de Baja Rotación (Alerta de Stock Atrapado)
+          </h3>
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="bg-slate-900/80 text-slate-400 font-bold uppercase border-b border-slate-800">
+                <th class="p-3">Producto</th>
+                <th class="p-3 text-center">Stock Físico</th>
+                <th class="p-3 text-right">Ventas Acumuladas</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-300">
+              <tr v-for="p in datosRotacion.menosVendidos" :key="p.id_producto" class="hover:bg-slate-800/50">
+                <td class="p-3 font-bold text-white">{{ p.nombre_producto }}</td>
+                <td class="p-3 text-center">
+                  <span class="bg-amber-950/50 text-amber-400 border border-amber-800/40 font-bold px-2 py-0.5 rounded-full">
+                    {{ parseFloat(p.stock_actual || 0) }} {{ p.unidad_medida === 'KILO' ? 'kg en estante' : 'en estante' }}
+                  </span>
+                </td>
+                <td class="p-3 text-right font-bold text-slate-400">
+                  {{ parseFloat(p.unidades_vendidas || 0) }} {{ p.unidad_medida === 'KILO' ? 'kg' : 'unids.' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+      </div>
     </div>
-</div>
 
     <!-- PESTAÑA 3: HISTORIAL DE MOVIMIENTOS -->
-    <div v-if="pestanaActiva === 'movimientos'" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <div class="flex justify-between items-center mb-6">
-            <h3 class="text-sm font-black text-[#0B192C]"> Bitácora de Auditoría de Inventario</h3>
-            <div class="flex gap-2">
-                <button 
-                    @click="exportarMovimientosExcel"
-                    class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 shadow-sm"
-                >
-                    Exportar Excel (.csv)
-                </button>
-                <button 
-                    @click="exportarPDF"
-                    class="bg-[#DC143C] hover:bg-[#B22222] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 shadow-sm"
-                >
-                    Exportar PDF
-                </button>
-            </div>
-        </div>  
-
-        <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-xs">
-                <thead>
-                    <tr class="bg-slate-50 text-gray-400 font-bold uppercase border-b border-gray-100">
-                        <th class="p-3">Fecha</th>
-                        <th class="p-3">Producto</th>
-                        <th class="p-3">Tipo Movimiento</th>
-                        <th class="p-3 text-center">Cantidad</th>
-                        <th class="p-3">Motivo / Justificación</th>
-                        <th class="p-3">Usuario Responsable</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-50 font-medium text-gray-700">
-                    <tr v-for="m in historialMovimientos" :key="m.id_movimiento" class="hover:bg-slate-50/50">
-                        <td class="p-3">{{ new Date(m.fecha_movimiento).toLocaleString('es-CL') }}</td>
-                        <td class="p-3 font-bold text-[#0B192C]">{{ m.productos?.nombre_producto }}</td>
-                        <td class="p-3">
-                            <span 
-                                :class="m.tipo_movimiento === 'ENTRADA' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'" 
-                                class="font-black px-2 py-0.5 rounded text-[10px]"
-                            >
-                                {{ m.tipo_movimiento }}
-                            </span>
-                        </td>
-                        <td class="p-3 text-center font-bold">{{ m.cantidad }}</td>
-                        <td class="p-3 text-gray-500">{{ m.motivo || 'N/A' }}</td>
-                        <td class="p-3 font-bold">{{ m.usuarios?.nombre_usuario || 'Sistema' }}</td>
-                    </tr>
-                </tbody>
-            </table>
+    <div v-if="pestanaActiva === 'movimientos'" class="bg-[#0D1B2E] p-6 rounded-2xl border border-slate-800">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-sm font-black text-white">Bitácora de Auditoría de Inventario</h3>
+        <div class="flex gap-2">
+          <button @click="exportarMovimientosExcel" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 shadow-sm">
+            Exportar Excel (.csv)
+          </button>
+          <button @click="exportarPDF" class="bg-[#DC143C] hover:bg-[#B22222] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 active:scale-95 shadow-sm">
+            Exportar PDF
+          </button>
         </div>
+      </div>  
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-slate-900/80 text-slate-400 font-bold uppercase border-b border-slate-800">
+              <th class="p-3">Fecha</th>
+              <th class="p-3">Producto</th>
+              <th class="p-3">Tipo Movimiento</th>
+              <th class="p-3 text-center">Cantidad</th>
+              <th class="p-3">Motivo / Justificación</th>
+              <th class="p-3">Usuario Responsable</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800 font-medium text-slate-300">
+            <tr v-for="m in historialMovimientos" :key="m.id_movimiento" class="hover:bg-slate-800/50">
+              <td class="p-3">{{ new Date(m.fecha_movimiento).toLocaleString('es-CL') }}</td>
+              <td class="p-3 font-bold text-white">{{ m.productos?.nombre_producto }}</td>
+              <td class="p-3">
+                <span 
+                  :class="m.tipo_movimiento === 'ENTRADA' ? 'bg-emerald-950/50 text-emerald-400 border border-emerald-800/40' : 'bg-red-950/50 text-red-400 border border-red-800/40'" 
+                  class="font-black px-2 py-0.5 rounded text-[10px]"
+                >
+                  {{ m.tipo_movimiento }}
+                </span>
+              </td>
+              <td class="p-3 text-center font-bold text-white">{{ m.cantidad }}</td>
+              <td class="p-3 text-slate-400">{{ m.motivo || 'N/A' }}</td>
+              <td class="p-3 font-bold text-slate-300">{{ m.usuarios?.nombre_usuario || 'Sistema' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
     
   </div>

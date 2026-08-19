@@ -1,87 +1,93 @@
 <template>
   <div class="space-y-6">
-    <div class="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+    <div class="flex justify-between items-center bg-[#0D1B2E] p-6 rounded-2xl border border-slate-800 shadow-sm">
       <div>
-        <h3 class="text-lg font-bold text-[#0B192C]">Lista de Usuarios</h3>
-        <p class="text-sm text-gray-400">Personal autorizado para operar el sistema Gestock</p>
+        <h3 class="text-lg font-bold text-white">Lista de Usuarios</h3>
+        <p class="text-sm text-slate-400">Personal autorizado para operar el sistema Gestock</p>
       </div>
-      <!-- Botón de nuevo usuario -->
+      <!-- 1. BOTÓN NUEVO USUARIO CON CONDICIÓN BLINDADA -->
       <button 
+        v-if="authStore.user?.rol?.toUpperCase().startsWith('ADMIN')"
         @click="showModal = true"
-        class="bg-[#0B192C] text-white hover:bg-blue-900 font-bold px-5 py-3 rounded-xl transition-all text-sm flex items-center gap-2 active:scale-95 shadow-lg shadow-blue-900/10"
+        class="bg-[#00D2C4] text-[#0B192C] font-black px-5 py-3 rounded-xl transition-all text-sm flex items-center gap-2 active:scale-95 hover:bg-[#00b8ac] shadow-md shadow-cyan-500/10"
       >
         <span>➕</span> Nuevo Usuario
       </button>
-      
     </div>
 
-    <div v-if="errorMsg" class="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-semibold border border-red-100">
+    <div v-if="errorMsg" class="bg-red-950/40 text-red-400 p-4 rounded-xl text-sm font-semibold border border-red-800/40">
       ⚠️ {{ errorMsg }}
     </div>
-    <div v-if="successMsg" class="bg-green-50 text-green-600 p-4 rounded-xl text-sm font-semibold border border-green-100">
+    <div v-if="successMsg" class="bg-emerald-950/40 text-emerald-400 p-4 rounded-xl text-sm font-semibold border border-emerald-800/40">
       ✅ {{ successMsg }}
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="bg-[#0D1B2E] rounded-2xl border border-slate-800 overflow-hidden shadow-sm">
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="bg-slate-50 border-b border-gray-100">
-              <th class="p-5 text-xs font-bold uppercase tracking-widest text-gray-400">Nombre</th>
-              <th class="p-5 text-xs font-bold uppercase tracking-widest text-gray-400">Correo Electrónico</th>
-              <th class="p-5 text-xs font-bold uppercase tracking-widest text-gray-400">Rol</th>
-              <th class="p-5 text-xs font-bold uppercase tracking-widest text-gray-400">Estado</th>
-              <th class="p-5 text-xs font-bold uppercase tracking-widest text-gray-400 text-center">Acciones</th>
+            <tr class="bg-slate-900/80 border-b border-slate-800">
+              <th class="p-5 text-xs font-bold uppercase tracking-widest text-slate-400">Nombre</th>
+              <th class="p-5 text-xs font-bold uppercase tracking-widest text-slate-400">Correo Electrónico</th>
+              <th class="p-5 text-xs font-bold uppercase tracking-widest text-slate-400">Rol</th>
+              <th class="p-5 text-xs font-bold uppercase tracking-widest text-slate-400">Estado</th>
+              <!-- 2. ENCABEZADO ACCIONES CON CONDICIÓN BLINDADA -->
+              <th v-if="authStore.user?.rol?.toUpperCase().startsWith('ADMIN')" class="p-5 text-xs font-bold uppercase tracking-widest text-slate-400 text-center">
+                Acciones
+              </th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-50 text-sm font-medium text-gray-700">
+          <tbody class="divide-y divide-slate-800 text-sm font-medium text-slate-300">
             <tr v-if="loading">
-              <td colspan="5" class="p-10 text-center text-gray-400 font-semibold">
+              <td :colspan="authStore.user?.rol?.toUpperCase().startsWith('ADMIN') ? 5 : 4" class="p-10 text-center text-slate-500 font-semibold">
                 Cargando registros de la base de datos...
               </td>
             </tr>
             
             <tr v-else-if="users.length === 0">
-              <td colspan="5" class="p-10 text-center text-gray-400 font-semibold">
+              <td :colspan="authStore.user?.rol?.toUpperCase().startsWith('ADMIN') ? 5 : 4" class="p-10 text-center text-slate-500 font-semibold">
                 No se encontraron usuarios en el sistema.
               </td>
             </tr>
 
-            <tr v-for="user in users" :key="user.id" class="hover:bg-slate-50/80 transition-colors">
-              <td class="p-5 font-bold text-[#0B192C]">{{ user.nombre }}</td>
-              <td class="p-5 text-gray-500">{{ user.correo }}</td>
+            <tr v-for="user in users" :key="user.id" class="hover:bg-slate-800/50 transition-colors">
+              <td class="p-5 font-bold text-white">{{ user.nombre }}</td>
+              <td class="p-5 text-slate-400">{{ user.correo }}</td>
               <td class="p-5">
                 <span 
-                  :class="user.rol === 'ADMIN' ? 'bg-blue-50 text-blue-600 border border-blue-100' : 'bg-purple-50 text-purple-600 border border-purple-100'"
+                  :class="user.rol?.toUpperCase().startsWith('ADMIN') ? 'bg-cyan-950/50 text-[#00D2C4] border border-cyan-800/40' : 'bg-purple-950/50 text-purple-400 border border-purple-800/40'"
                   class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
                 >
                   {{ user.rol || 'CAJERO' }}
                 </span>
               </td>
               <td class="p-5">
-                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-green-50 text-green-600 border border-green-100">
-                  <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span> Activo
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-950/40 text-emerald-400 border border-emerald-800/40">
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Activo
                 </span>
               </td>
-              <td class="p-5 text-center">
+              <!-- 3. ACCIONES EN FILAS CON CONDICIÓN BLINDADA -->
+              <td v-if="authStore.user?.rol?.toUpperCase().startsWith('ADMIN')" class="p-5 text-center">
                 <div class="flex items-center justify-center gap-2">
-
                   <button 
                     @click="openEditModal(user)"
-                    class="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-all active:scale-90" 
+                    class="text-cyan-400 hover:bg-slate-800 p-2 rounded-lg transition-all active:scale-90" 
                     title="Editar"
                   >
                     ✏️
                   </button>
-
+                  <!-- BOTÓN ELIMINAR BLINDADO -->
                   <button 
-                    @click="handleDeleteUser(user.id, user.nombre)"
-                    class="text-red-600 hover:bg-red-50 p-2 rounded-lg transition-all active:scale-90" 
+                    v-if="
+                      (user.correo || user.email)?.toLowerCase().trim() !== (authStore.user?.correo || authStore.user?.email)?.toLowerCase().trim() &&
+                      String(user.id || user.id_usuario) !== String(authStore.user?.id || authStore.user?.id_usuario)
+                    "
+                    @click="handleDeleteUser(user.id || user.id_usuario, user.nombre)"
+                    class="text-red-400 hover:bg-slate-800 p-2 rounded-lg transition-all active:scale-90" 
                     title="Eliminar"
                   >
                     🗑️
                   </button>
-
                 </div>
               </td>
             </tr>
@@ -90,86 +96,77 @@
       </div>
     </div>
 
-    <div 
-      v-if="showModal" 
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in"
-    >
-      <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-100 overflow-hidden transform transition-all p-6 space-y-6">
-        
-        <div class="flex justify-between items-center border-b border-gray-100 pb-3">
-          <h3 class="text-lg font-black text-[#0B192C]">
+    <!-- MODAL REGISTRO / EDICIÓN -->
+    <div v-if="showModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div class="bg-[#0D1B2E] w-full max-w-md rounded-2xl border border-slate-800 p-6 space-y-6 text-white">
+        <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+          <h3 class="text-lg font-black text-white">
             {{ isEditing ? 'Editar Usuario' : 'Registrar Nuevo Usuario' }}
           </h3>
-          <button @click="closeModal" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+          <button @click="closeModal" class="text-slate-400 hover:text-white text-xl font-bold">&times;</button>
         </div>
 
         <form @submit.prevent="handleSubmit" class="space-y-4">
-          
           <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-bold uppercase text-gray-400 tracking-wider">Nombre Completo</label>
+            <label class="text-xs font-bold uppercase text-slate-400 tracking-wider">Nombre Completo</label>
             <input 
               v-model="form.nombre"
               type="text" 
               required
-              placeholder="Ej. Juan Pérez"
-              class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-medium focus:outline-none focus:border-[#1E40AF] focus:ring-1 focus:ring-[#1E40AF]"
+              class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-medium focus:outline-none focus:border-[#00D2C4]"
             />
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-bold uppercase text-gray-400 tracking-wider">Correo Electrónico</label>
+            <label class="text-xs font-bold uppercase text-slate-400 tracking-wider">Correo Electrónico</label>
             <input 
               v-model="form.correo"
               type="email" 
               required
-              placeholder="juan.perez@gestock.cl"
-              class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-medium focus:outline-none focus:border-[#1E40AF] focus:ring-1 focus:ring-[#1E40AF]"
+              class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-medium focus:outline-none focus:border-[#00D2C4]"
             />
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-bold uppercase text-gray-400 tracking-wider">Contraseña de Acceso</label>
+            <label class="text-xs font-bold uppercase text-slate-400 tracking-wider">Contraseña</label>
             <input 
               v-model="form.password"
               type="password" 
               required
-              placeholder="••••••••"
-              class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-medium focus:outline-none focus:border-[#1E40AF] focus:ring-1 focus:ring-[#1E40AF]"
+              class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-medium focus:outline-none focus:border-[#00D2C4]"
             />
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label class="text-xs font-bold uppercase text-gray-400 tracking-wider">Rol en el Sistema</label>
+            <label class="text-xs font-bold uppercase text-slate-400 tracking-wider">Rol en el Sistema</label>
             <select 
               v-model="form.rol"
-              class="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm font-medium focus:outline-none focus:border-[#1E40AF] bg-white"
+              class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-medium focus:outline-none focus:border-[#00D2C4]"
             >
               <option value="CAJERO">Cajero (Operador de ventas)</option>
               <option value="ADMINISTRADOR">Administrador (Control total)</option>
             </select>
           </div>
 
-          <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
+          <div class="flex justify-end gap-3 pt-4 border-t border-slate-800">
             <button 
               type="button" 
               @click="closeModal"
-              class="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-500 font-bold text-sm hover:bg-gray-50 transition-all"
+              class="px-5 py-2.5 rounded-xl border border-slate-700 text-slate-400 font-bold text-sm hover:bg-slate-800"
             >
               Cancelar
             </button>
             <button 
               type="submit"
               :disabled="submitting"
-              class="px-5 py-2.5 rounded-xl bg-[#00D2C4] text-[#0B192C] font-black text-sm hover:bg-[#00b8ac] transition-all disabled:opacity-50"
+              class="px-5 py-2.5 rounded-xl bg-[#00D2C4] text-[#0B192C] font-black text-sm hover:bg-[#00b8ac] disabled:opacity-50"
             >
               {{ submitting ? 'Guardando...' : (isEditing ? 'Actualizar Usuario' : 'Guardar Usuario') }}
             </button>
           </div>
         </form>
-
       </div>
     </div>
-
   </div>
 </template>
 

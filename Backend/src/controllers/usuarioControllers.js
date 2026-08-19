@@ -6,10 +6,8 @@ const prisma = new PrismaClient();
 // GET: Obtener todos los usuarios
 export const getUsuarios = async (req, res) => {
   try {
-    // Consultamos directo a la tabla usuarios
     const listaUsuarios = await prisma.usuarios.findMany();
 
-    // Mapeamos de forma segura validando que los campos existan
     const usuariosFormateados = listaUsuarios.map(u => ({
       id: u.id_usuario,
       nombre: u.nombre_usuario || "Usuario sin nombre",
@@ -19,7 +17,6 @@ export const getUsuarios = async (req, res) => {
 
     res.json(usuariosFormateados);
   } catch (error) {
-    // ESTO ES CLAVE: Nos pintará en la terminal del backend el error exacto de PostgreSQL o Prisma
     console.error("ERROR REAL EN GET_USUARIOS:", error); 
     res.status(500).json({ mensaje: "Error interno del servidor al obtener usuarios" });
   }
@@ -41,7 +38,7 @@ export const createUsuario = async (req, res) => {
     if (existeUsuario) {
       return res.status(400).json({ mensaje: "El correo electrónico ya está registrado" });
     }
-    //  LA SOLUCIÓN: Encriptamos la contraseña con 10 rondas de salt antes de guardarla
+
     const salt = await bcrypt.genSalt(10);
     const passwordEncriptada = await bcrypt.hash(password, salt);
 
@@ -49,7 +46,7 @@ export const createUsuario = async (req, res) => {
       data: {
         nombre_usuario: nombre,
         correo: correo,
-        password: passwordEncriptada, // <-- Guardamos el Hash seguro en PostgreSQL
+        password: passwordEncriptada,
         rol: rol || "CAJERO"
       }
     });
@@ -65,11 +62,17 @@ export const createUsuario = async (req, res) => {
 export const deleteUsuario = async (req, res) => {
   try {
     const { id } = req.params;
-
-    // Convertimos el id a entero porque en tu schema.prisma es un Int autoincremental
     const idInt = parseInt(id);
+    const idUsuarioSolicitante = req.usuario?.id_usuario || req.usuario?.id;
 
-    // Verificamos si el usuario existe antes de borrar
+    // 1. REGLA: No permitir auto-eliminación
+    if (idUsuarioSolicitante && idUsuarioSolicitante === idInt) {
+      return res.status(400).json({ 
+        mensaje: "Acción denegada: No puedes eliminar tu propia cuenta de usuario." 
+      });
+    }
+
+    // 2. Verificar existencia del usuario
     const usuarioExiste = await prisma.usuarios.findUnique({
       where: { id_usuario: idInt }
     });
@@ -78,7 +81,26 @@ export const deleteUsuario = async (req, res) => {
       return res.status(404).json({ mensaje: "El usuario no existe" });
     }
 
-    // Ejecutamos el delete real en la tabla
+    // 3. REGLA: Proteger al último Administrador
+    const rolNormalizado = usuarioExiste.rol?.toUpperCase() || "";
+    if (rolNormalizado.startsWith("ADMIN")) {
+      const cantidadAdmins = await prisma.usuarios.count({
+        where: {
+          OR: [
+            { rol: { startsWith: "ADMIN" } },
+            { rol: { startsWith: "admin" } }
+          ]
+        }
+      });
+
+      if (cantidadAdmins <= 1) {
+        return res.status(400).json({ 
+          mensaje: "Acción bloqueada: No puedes eliminar al único Administrador disponible en el sistema." 
+        });
+      }
+    }
+
+    // 4. Eliminar el registro
     await prisma.usuarios.delete({
       where: { id_usuario: idInt }
     });
@@ -97,7 +119,6 @@ export const updateUsuario = async (req, res) => {
     const { nombre, correo, password, rol } = req.body;
     const idInt = parseInt(id);
 
-    // 1. Verificar si el usuario existe
     const usuarioExiste = await prisma.usuarios.findUnique({
       where: { id_usuario: idInt }
     });
@@ -106,7 +127,6 @@ export const updateUsuario = async (req, res) => {
       return res.status(404).json({ mensaje: "El usuario no existe" });
     }
 
-    // 2. Si intenta cambiar el correo, verificar que no esté duplicado con otro usuario
     if (correo && correo !== usuarioExiste.correo) {
       const correoDuplicado = await prisma.usuarios.findUnique({
         where: { correo }
@@ -116,20 +136,17 @@ export const updateUsuario = async (req, res) => {
       }
     }
 
-    // 3. Preparar los datos para actualizar de acuerdo a tu schema.prisma
     const datosActualizados = {
       nombre_usuario: nombre || usuarioExiste.nombre_usuario,
       correo: correo || usuarioExiste.correo,
       rol: rol || usuarioExiste.rol
     };
 
-   // Si viene una contraseña nueva y no está vacía, la encriptamos de forma segura antes de actualizar
     if (password && password.trim() !== "") {
       const salt = await bcrypt.genSalt(10);
       datosActualizados.password = await bcrypt.hash(password, salt);
     }
 
-    // 4. Ejecutar la actualización en PostgreSQL
     const usuarioActualizado = await prisma.usuarios.update({
       where: { id_usuario: idInt },
       data: datosActualizados
