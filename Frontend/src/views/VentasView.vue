@@ -2,33 +2,30 @@
 import { ref, computed, onMounted } from 'vue';
 import axios from 'axios';
 import { storeToRefs } from 'pinia';
-import { usePosStore } from '../stores/posStore'; // Ajusta la ruta a tu carpeta stores
+import { usePosStore } from '../stores/posStore';
 
 const posStore = usePosStore();
-
-// Extraemos las propiedades reactivas manteniendo su reactividad
 const { carrito, metodoPago } = storeToRefs(posStore);
-// Extraemos los métodos de la store
 const { vaciarCarrito, guardarPersistencia } = posStore;
 
 // --- ESTADOS REACTIVOS ---
-const productosBD = ref([]);            // Catálogo real desde el Backend
-const busqueda = ref('');               // Modelo para el buscador / lector barcode
-//const carrito = ref([]);                // Ítems agregados a la venta actual
-//const metodoPago = ref('Efectivo');     // Estado del método de pago
-const cargandoVenta = ref(false);      // Loading spinner para el botón de cobro
-const mensajeExito = ref('');           // Feedback de venta registrada
-const mensajeError = ref('');           // Feedback de errores (ej. stock insuficiente)
+const productosBD = ref([]);
+const busqueda = ref('');
+const cargandoVenta = ref(false);
+const mensajeExito = ref('');
+const mensajeError = ref('');
 
-// --- OBTENER CATÁLOGO REAL AL MONTAR EL COMPONENTE ---
+// --- OBTENER CATÁLOGO REAL ---
 const obtenerProductos = async () => {
   try {
     const token = localStorage.getItem('token');
     const res = await axios.get('http://localhost:4000/api/productos', {
       headers: { Authorization: `Bearer ${token}` }
     });
-    // Filtramos solo productos activos
-    productosBD.value = res.data.filter(p => p.estado === 'activo');
+    
+    const lista = Array.isArray(res.data) ? res.data : (res.data.productos || []);
+    // Si manejas estado 'activo', filtramos; si no viene la propiedad, dejamos todos
+    productosBD.value = lista.filter(p => !p.estado || p.estado === 'activo');
   } catch (err) {
     console.error('Error al cargar productos:', err);
     mensajeError.value = 'No se pudo cargar el catálogo de productos.';
@@ -39,20 +36,19 @@ onMounted(() => {
   obtenerProductos();
 });
 
-// --- FILTRO DINÁMICO DE BÚSQUEDA (Nombre o Código de Barras) ---
+// --- FILTRO DINÁMICO ---
 const productosFiltrados = computed(() => {
   if (!busqueda.value.trim()) return [];
-  const query = busqueda.value.toLowerCase();
+  const query = busqueda.value.toLowerCase().trim();
   return productosBD.value.filter(p => 
-    p.nombre_producto.toLowerCase().includes(query) ||
-    (p.codigo_barra && p.codigo_barra.includes(query))
+    p.nombre_producto?.toLowerCase().includes(query) ||
+    (p.codigo_barra && String(p.codigo_barra).includes(query))
   );
 });
 
-// AGREGAR AL CARRITO (SOPORTA KILOS Y UNIDADES)
+// --- AGREGAR AL CARRITO ---
 const agregarAlCarrito = (producto) => {
   mensajeError.value = '';
-  
   const stockDisponible = parseFloat(producto.stock_actual || 0);
 
   if (stockDisponible <= 0) {
@@ -66,7 +62,7 @@ const agregarAlCarrito = (producto) => {
   if (existe) {
     const paso = esPesable ? 0.500 : 1;
     if (existe.cantidad + paso > existe.stock_max) {
-      mensajeError.value = `Stock máximo disponible alcanzado (${existe.stock_max} ${esPesable ? 'kg' : 'unids'}).`;
+      mensajeError.value = `Stock máximo alcanzado (${existe.stock_max} ${esPesable ? 'kg' : 'unids'}).`;
       return;
     }
     existe.cantidad = parseFloat((existe.cantidad + paso).toFixed(3));
@@ -84,37 +80,31 @@ const agregarAlCarrito = (producto) => {
   }
   
   busqueda.value = '';
-  
-  // Guardamos la adición en LocalStorage/Store
   guardarPersistencia();
 };
 
-// Auto-agregar si el escáner detecta un código de barras exacto (Enter)
 const buscarYAgregarBarcode = () => {
   if (!busqueda.value.trim()) return;
-  const encontrado = productosBD.value.find(p => p.codigo_barra === busqueda.value.trim());
+  const encontrado = productosBD.value.find(p => String(p.codigo_barra) === busqueda.value.trim());
   if (encontrado) {
     agregarAlCarrito(encontrado);
   }
 };
 
-// INCREMENTAR CON BOTÓN (+)
 const incrementarCantidad = (item) => {
   const esPesable = item.unidad_medida === 'KILO';
   const paso = esPesable ? 0.500 : 1;
   const nuevaCantidad = parseFloat((item.cantidad + paso).toFixed(3));
 
   if (nuevaCantidad > item.stock_max) {
-    mensajeError.value = `No hay más stock disponible para ${item.nombre} (Máx: ${item.stock_max} ${esPesable ? 'kg' : 'unids'})`;
+    mensajeError.value = `No hay más stock disponible para ${item.nombre} (Máx: ${item.stock_max})`;
     return;
   }
   item.cantidad = nuevaCantidad;
   item.subtotal = Math.round(item.cantidad * item.precio_venta);
-
   guardarPersistencia();
 };
 
-// DECREMENTAR CON BOTÓN (-)
 const decrementarCantidad = (item) => {
   const esPesable = item.unidad_medida === 'KILO';
   const paso = esPesable ? 0.500 : 1;
@@ -129,23 +119,18 @@ const decrementarCantidad = (item) => {
   }
 };
 
-// EDICIÓN MANUAL DIRECTA DESDE EL INPUT (ej: tipear 0.750)
 const actualizarCantidadDirecta = (item, event) => {
   const valorIngresado = parseFloat(event.target.value);
-
-  if (isNaN(valorIngresado) || valorIngresado <= 0) {
-    return; // Si el usuario borra o escribe 0, se ignora hasta ingresar un número válido
-  }
+  if (isNaN(valorIngresado) || valorIngresado <= 0) return;
 
   if (valorIngresado > item.stock_max) {
-    mensajeError.value = `Supera el stock disponible para ${item.nombre} (Máx: ${item.stock_max} ${item.unidad_medida === 'KILO' ? 'kg' : 'unids'})`;
+    mensajeError.value = `Supera el stock disponible para ${item.nombre} (Máx: ${item.stock_max})`;
     item.cantidad = item.stock_max;
   } else {
     item.cantidad = valorIngresado;
   }
 
   item.subtotal = Math.round(item.cantidad * item.precio_venta);
-
   guardarPersistencia();
 };
 
@@ -154,20 +139,12 @@ const eliminarDelCarrito = (id_producto) => {
   guardarPersistencia();
 };
 
-// --- CÁLCULOS FINANCIEROS DINÁMICOS (COMPUTED) ---
-const totalCaja = computed(() => {
-  return carrito.value.reduce((acc, item) => acc + item.subtotal, 0);
-});
+// --- CÁLCULOS FINANCIEROS ---
+const totalCaja = computed(() => carrito.value.reduce((acc, item) => acc + item.subtotal, 0));
+const netoAfecto = computed(() => Math.round(totalCaja.value / 1.19));
+const ivacalculado = computed(() => totalCaja.value - netoAfecto.value);
 
-const netoAfecto = computed(() => {
-  return Math.round(totalCaja.value / 1.19);
-});
-
-const ivacalculado = computed(() => {
-  return totalCaja.value - netoAfecto.value;
-});
-
-// --- PROCESAR LA VENTA CON EL BACKEND (POST /api/ventas) ---
+// --- PROCESAR VENTA ---
 const procesarVenta = async () => {
   if (carrito.value.length === 0) return;
 
@@ -178,7 +155,6 @@ const procesarVenta = async () => {
 
     const token = localStorage.getItem('token');
     
-    // Mapeamos al formato exacto que exige ventaControllers.js
     const payload = {
       detalles: carrito.value.map(item => ({
         id_producto: item.id_producto,
@@ -191,11 +167,10 @@ const procesarVenta = async () => {
       headers: { Authorization: `Bearer ${token}` }
     });
 
-    // Feedback y limpieza
-    mensajeExito.value = `¡Venta #${res.data.detalles.id_venta} cobrada con éxito!`;
+    const idVentaGenerada = res.data.detalles?.id_venta || '';
+    mensajeExito.value = `¡Venta ${idVentaGenerada ? '#' + idVentaGenerada : ''} cobrada con éxito!`;
     vaciarCarrito();
     
-    // Refrescamos la lista de productos para actualizar el stock local
     await obtenerProductos();
 
   } catch (err) {
