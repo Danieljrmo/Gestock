@@ -7,18 +7,27 @@ import productoRoutes from "./routes/productoRoutes.js";
 import ventaRoutes from "./routes/ventaRoutes.js";
 import reporteRoutes from "./routes/reporteRoutes.js";
 import movimientoRoutes from "./routes/movimientoRoutes.js";
+
 const app = express();
 
-// Middlewares
-app.use(cors());
-app.use(express.json()); // Necesario para leer el JSON de Postman
+// Configuración de CORS según variable de entorno
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || "*",
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+};
 
-// Rutas de las Épicas (Probadas con Postman)
+app.use(cors(corsOptions));
+app.use(express.json());
+
+// Rutas de la API
 app.use("/api/auth", authRoutes);
 app.use("/api/usuarios", usuarioRoutes);
 app.use("/api/categorias", categoriaRoutes);
 app.use("/api/productos", productoRoutes);
 app.use("/api/ventas", ventaRoutes);
 app.use("/api/reportes", reporteRoutes);
-app.use("/api/movimientos", movimientoRoutes); 
-export default app; // Exportamos la configuración de Express para usarla en el servidor (index.js)
+app.use("/api/movimientos", movimientoRoutes);
+
+export default app;

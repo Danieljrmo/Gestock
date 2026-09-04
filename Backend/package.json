@@ -5,13 +5,16 @@
   "description": "Sistema de Gestión de Stock para Minimarkets",
   "main": "src/server.js",
   "scripts": {
+    "dev": "node src/server.js",
     "start": "node src/server.js",
-    "dev": "node src/server.js"
+    "build": "npx prisma generate"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
   },
   "dependencies": {
     "@prisma/client": "^5.19.0",
     "bcrypt": "^6.0.0",
-    "bcryptjs": "^3.0.2",
     "cors": "^2.8.6",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
