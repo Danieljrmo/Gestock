@@ -4,6 +4,8 @@ import axios from 'axios';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+
 // ESTADOS DE PESTAÑA Y FILTROS
 const pestanaActiva = ref('ventas'); // 'ventas' | 'rotacion' | 'movimientos'
 const cargando = ref(false);
@@ -144,7 +146,7 @@ const cargarReporteVentas = async () => {
   try {
     cargando.value = true;
     const token = localStorage.getItem('token');
-    const res = await axios.get('http://localhost:4000/api/reportes/periodo', {
+    const res = await axios.get(`${API_BASE_URL}/api/reportes/periodo`, {
       params: { fechaInicio: fechaInicio.value, fechaFin: fechaFin.value },
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -161,7 +163,7 @@ const cargarRotacion = async () => {
   try {
     cargando.value = true;
     const token = localStorage.getItem('token');
-    const res = await axios.get('http://localhost:4000/api/reportes/rotacion', {
+    const res = await axios.get(`${API_BASE_URL}/api/reportes/rotacion`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     datosRotacion.value = res.data;
@@ -177,7 +179,7 @@ const cargarHistorial = async () => {
   try {
     cargando.value = true;
     const token = localStorage.getItem('token');
-    const res = await axios.get('http://localhost:4000/api/reportes/movimientos', {
+    const res = await axios.get(`${API_BASE_URL}/api/reportes/movimientos`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     historialMovimientos.value = res.data;

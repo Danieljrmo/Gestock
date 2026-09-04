@@ -406,6 +406,7 @@ import axios from 'axios';
 import { useAuthStore } from '../stores/auth';
 import MovementsModal from './MovementsModal.vue';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 const authStore = useAuthStore();
 const errorMsg = ref('');
 const successMsg = ref('');
@@ -459,7 +460,7 @@ const resetProductForm = () => {
 
 const fetchCategories = async () => {
   try {
-    const response = await axios.get('http://localhost:4000/api/categorias', {
+    const response = await axios.get(`${API_BASE_URL}/api/categorias`, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
     categorias.value = Array.isArray(response.data) ? response.data : response.data.categorias || [];
@@ -476,7 +477,7 @@ const handleCreateCategory = async () => {
     errorMsg.value = '';
     successMsg.value = '';
 
-    await axios.post('http://localhost:4000/api/categorias', 
+    await axios.post(`${API_BASE_URL}/api/categorias`, 
       { nombre_categoria: newCategoryName.value }, 
       { headers: { Authorization: `Bearer ${authStore.token}` } }
     );
@@ -496,7 +497,7 @@ const handleCreateCategory = async () => {
 const fetchProducts = async () => {
   try {
     loadingProducts.value = true;
-    const response = await axios.get('http://localhost:4000/api/productos', {
+    const response = await axios.get(`${API_BASE_URL}/api/productos`, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
     const data = Array.isArray(response.data) ? response.data : response.data.productos || [];
@@ -561,7 +562,7 @@ const handleCreateProduct = async () => {
       id_categoria: parseInt(productForm.value.id_categoria)
     };
 
-    await axios.post('http://localhost:4000/api/productos', payload, {
+    await axios.post(`${API_BASE_URL}/api/productos`, payload, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
 
@@ -595,7 +596,7 @@ const handleUpdateProduct = async () => {
       id_categoria: parseInt(productForm.value.id_categoria)
     };
 
-    await axios.put(`http://localhost:4000/api/productos/${currentProductId.value}`, payload, {
+    await axios.put(`${API_BASE_URL}/api/productos/${currentProductId.value}`, payload, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
 
@@ -655,7 +656,7 @@ const handleDisableProduct = async (id, nombre) => {
     successMsg.value = '';
     const idLimpia = parseInt(id);
 
-    await axios.delete(`http://localhost:4000/api/productos/${idLimpia}`, {
+    await axios.delete(`${API_BASE_URL}/api/productos/${idLimpia}`, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
 
@@ -691,7 +692,7 @@ const confirmarEliminarCategoria = async (cat) => {
       errorMsg.value = '';
       successMsg.value = '';
 
-      await axios.delete(`http://localhost:4000/api/categorias/${idLimpia}`, {
+      await axios.delete(`${API_BASE_URL}/api/categorias/${idLimpia}`, {
         headers: { Authorization: `Bearer ${authStore.token}` }
       });
 

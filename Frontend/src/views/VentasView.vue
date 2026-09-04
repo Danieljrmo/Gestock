@@ -4,6 +4,7 @@ import axios from 'axios';
 import { storeToRefs } from 'pinia';
 import { usePosStore } from '../stores/posStore';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 const posStore = usePosStore();
 const { carrito, metodoPago } = storeToRefs(posStore);
 const { vaciarCarrito, guardarPersistencia } = posStore;
@@ -19,7 +20,7 @@ const mensajeError = ref('');
 const obtenerProductos = async () => {
   try {
     const token = localStorage.getItem('token');
-    const res = await axios.get('http://localhost:4000/api/productos', {
+    const res = await axios.get(`${API_BASE_URL}/api/productos`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     
@@ -163,7 +164,7 @@ const procesarVenta = async () => {
       metodo_pago: metodoPago.value
     };
 
-    const res = await axios.post('http://localhost:4000/api/ventas', payload, {
+    const res = await axios.post(`${API_BASE_URL}/api/ventas`, payload, {
       headers: { Authorization: `Bearer ${token}` }
     });
 

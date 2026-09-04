@@ -10,6 +10,7 @@ const props = defineProps({
     default: () => []
   }
 });
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 const emit = defineEmits(['close', 'saved']);
 const authStore = useAuthStore();
@@ -91,7 +92,7 @@ const handleRegisterMovement = async () => {
       motivo: movementForm.value.motivo.trim() || (movementForm.value.tipo_movimiento === 'Entrada' ? 'Ingreso de Mercadería' : 'Ajuste de Merma')
     };
 
-    await axios.post('http://localhost:4000/api/movimientos', payload, {
+    await axios.post(`${API_BASE_URL}/api/movimientos`, payload, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
 

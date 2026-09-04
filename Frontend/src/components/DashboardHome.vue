@@ -171,7 +171,7 @@ import { Bar, Doughnut } from 'vue-chartjs';
 import { useAuthStore } from '../stores/auth';
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement);
-
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 const cargando = ref(true);
 const authStore = useAuthStore();
 
@@ -253,7 +253,7 @@ const cargarDatosDashboard = async () => {
     const headers = { Authorization: `Bearer ${token}` };
 
     // 1. Cargar Productos (Alertas y Capital)
-    const resProd = await axios.get('http://localhost:4000/api/productos', { headers });
+    const resProd = await axios.get(`${API_BASE_URL}/api/productos`, { headers });
     const productos = Array.isArray(resProd.data) ? resProd.data : resProd.data.productos || [];
     
     const criticos = productos.filter(p => parseFloat(p.stock_actual) <= parseFloat(p.stock_minimo || 5));
@@ -265,7 +265,7 @@ const cargarDatosDashboard = async () => {
     }, 0);
 
     // 2. Cargar Ventas para KPIs
-    const resVentas = await axios.get('http://localhost:4000/api/reportes/periodo', { headers });
+    const resVentas = await axios.get(`${API_BASE_URL}/api/reportes/periodo`, { headers });
     const ventas = resVentas.data.ventas || [];
 
     kpis.value.totalRecaudado = resVentas.data.metricas?.totalVendido || ventas.reduce((acc, v) => acc + parseFloat(v.total || 0), 0);

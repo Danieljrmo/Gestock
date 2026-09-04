@@ -153,12 +153,15 @@ const mostrarModalReset = ref(false);
 const router = useRouter();
 const authStore = useAuthStore();
 
+// Obtener la URL del backend dinámicamente según el entorno
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+
 const handleLogin = async () => {
   try {
     cargando.value = true;
     errorMsg.value = '';
     
-    const response = await axios.post('http://localhost:4000/api/auth/login', {
+    const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
       correo: email.value,
       password: password.value
     });

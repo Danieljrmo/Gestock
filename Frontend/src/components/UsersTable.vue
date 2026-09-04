@@ -175,6 +175,7 @@ import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { useAuthStore } from '../stores/auth';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 const authStore = useAuthStore();
 const users = ref([]);
 const loading = ref(true);
@@ -199,7 +200,7 @@ const fetchUsers = async () => {
   try {
     loading.value = true;
     errorMsg.value = '';
-    const response = await axios.get('http://localhost:4000/api/usuarios', {
+    const response = await axios.get(`${API_BASE_URL}/api/usuarios`, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
     users.value = response.data;
@@ -220,13 +221,13 @@ const handleSubmit = async () => {
 
     if (isEditing.value) {
       // --- MODO EDICIÓN: Dispara PUT ---
-      await axios.put(`http://localhost:4000/api/usuarios/${editingUserId.value}`, form.value, {
+      await axios.put(`${API_BASE_URL}/api/usuarios/${editingUserId.value}`, form.value, {
         headers: { Authorization: `Bearer ${authStore.token}` }
       });
       successMsg.value = '¡Usuario actualizado exitosamente!';
     } else {
       // --- MODO CREACIÓN: Dispara POST ---
-      await axios.post('http://localhost:4000/api/usuarios', form.value, {
+      await axios.post(`${API_BASE_URL}/api/usuarios`, form.value, {
         headers: { Authorization: `Bearer ${authStore.token}` }
       });
       successMsg.value = '¡Usuario registrado exitosamente!';
@@ -270,7 +271,7 @@ const handleDeleteUser = async (id, nombre) => {
     successMsg.value = '';
 
     // Hacemos el DELETE inyectando el ID dinámicamente en la URL
-    await axios.delete(`http://localhost:4000/api/usuarios/${id}`, {
+    await axios.delete(`${API_BASE_URL}/api/usuarios/${id}`, {
       headers: { Authorization: `Bearer ${authStore.token}` }
     });
 
