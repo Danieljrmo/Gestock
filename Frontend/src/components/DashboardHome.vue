@@ -271,21 +271,21 @@ const cargarDatosDashboard = async () => {
     kpis.value.totalRecaudado = resVentas.data.metricas?.totalVendido || ventas.reduce((acc, v) => acc + parseFloat(v.total || 0), 0);
     kpis.value.totalTransacciones = resVentas.data.metricas?.totalTransacciones || ventas.length;
 
-    // Obtener fecha local de hoy en formato YYYY-MM-DD
-    const anio = hoyObj.getFullYear();
-    const mes = String(hoyObj.getMonth() + 1).padStart(2, '0');
-    const dia = String(hoyObj.getDate()).padStart(2, '0');
-    const hoyLocalStr = `${anio}-${mes}-${dia}`;
+    // OBTENER FECHA LOCAL CHILENA ACTUAL (YYYY-MM-DD)
+    const hoyObj = new Date();
+    const hoyLocalStr = hoyObj.toLocaleDateString('sv-SE', { timeZone: 'America/Santiago' });
 
+    // Filtrar ventas considerando la hora local real del usuario
     const ventasHoyArr = ventas.filter(v => {
-      const fechaVenta = String(v.fecha_venta || v.created_at || '').substring(0, 10);
-      return fechaVenta === hoyLocalStr;
+      if (!v.fecha_venta && !v.created_at) return false;
+      const fechaLocalVenta = new Date(v.fecha_venta || v.created_at).toLocaleDateString('sv-SE', { timeZone: 'America/Santiago' });
+      return fechaLocalVenta === hoyLocalStr;
     });
 
     kpis.value.ventasHoy = ventasHoyArr.reduce((acc, v) => acc + parseFloat(v.total || 0), 0);
     kpis.value.ticketPromedio = ventas.length > 0 ? Math.round(kpis.value.totalRecaudado / ventas.length) : 0;
 
-    // 3. GENERAR DATA REAL PARA EL GRÁFICO SEMANAL (ÚLTIMOS 7 DÍAS)
+    // 3. GENERAR DATA REAL PARA EL GRÁFICO SEMANAL (ÚLTIMOS 7 DÍAS EN HORA LOCAL)
     const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     const ultimos7Dias = [];
     const ventasPorDia = [0, 0, 0, 0, 0, 0, 0];
@@ -293,10 +293,7 @@ const cargarDatosDashboard = async () => {
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      const anioD = d.getFullYear();
-      const mesD = String(d.getMonth() + 1).padStart(2, '0');
-      const diaD = String(d.getDate()).padStart(2, '0');
-      const strFecha = `${anioD}-${mesD}-${diaD}`;
+      const strFecha = d.toLocaleDateString('sv-SE', { timeZone: 'America/Santiago' });
       
       ultimos7Dias.push({
         label: diasSemana[d.getDay()],
@@ -305,7 +302,11 @@ const cargarDatosDashboard = async () => {
     }
 
     ultimos7Dias.forEach((diaInfo, idx) => {
-      const ventasDelDia = ventas.filter(v => String(v.fecha_venta || v.created_at || '').substring(0, 10) === diaInfo.fechaStr);
+      const ventasDelDia = ventas.filter(v => {
+        if (!v.fecha_venta && !v.created_at) return false;
+        const fechaLocalVenta = new Date(v.fecha_venta || v.created_at).toLocaleDateString('sv-SE', { timeZone: 'America/Santiago' });
+        return fechaLocalVenta === diaInfo.fechaStr;
+      });
       ventasPorDia[idx] = ventasDelDia.reduce((acc, v) => acc + parseFloat(v.total || 0), 0);
     });
 
