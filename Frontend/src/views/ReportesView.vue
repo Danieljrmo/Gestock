@@ -6,6 +6,9 @@ import autoTable from 'jspdf-autotable';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
+// Variable para controlar la boleta seleccionada en el modal
+const boletaSeleccionada = ref(null);
+
 // ESTADOS DE PESTAÑA Y FILTROS
 const pestanaActiva = ref('ventas'); // 'ventas' | 'rotacion' | 'movimientos'
 const cargando = ref(false);
@@ -308,7 +311,7 @@ onMounted(() => {
     <!-- PESTAÑA 1: VENTAS POR PERÍODO -->
     <div v-if="pestanaActiva === 'ventas'" class="space-y-6">
 
-      <!-- CONTROLES DE FILTRO -->
+      <!-- CONTROLES DE FILTRO Y EXPORTACIÓN -->
       <div class="bg-[#0D1B2E] p-6 rounded-2xl border border-slate-800 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div class="flex flex-wrap items-end gap-4">
           <div>
@@ -319,7 +322,7 @@ onMounted(() => {
               class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-xs font-bold text-white focus:outline-none focus:border-[#00D2C4]" 
             />
           </div>
-
+m
           <div>
             <label class="block text-[11px] font-black uppercase text-slate-400 mb-1">Fecha Fin</label>
             <input 
@@ -336,7 +339,7 @@ onMounted(() => {
             🔍 Filtrar Período
           </button> 
         </div>
-    
+
         <div class="flex items-center gap-2">
           <button 
             @click="exportarVentasExcel"
@@ -362,25 +365,29 @@ onMounted(() => {
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-[#0D1B2E] p-5 rounded-2xl border border-slate-800">
           <p class="text-[11px] font-black uppercase text-slate-400">Total Recaudado (Bruto)</p>
-          <p class="text-2xl font-black text-white mt-1">${{ resumenVentas.metricas.totalVendido.toLocaleString('es-CL') }}</p>
+          <p class="text-2xl font-black text-white mt-1">${{ (resumenVentas.metricas?.totalVendido || 0).toLocaleString('es-CL') }}</p>
         </div>
         <div class="bg-[#0D1B2E] p-5 rounded-2xl border border-slate-800">
           <p class="text-[11px] font-black uppercase text-slate-400">Neto Afecto</p>
-          <p class="text-2xl font-black text-slate-300 mt-1">${{ resumenVentas.metricas.netoAfecto.toLocaleString('es-CL') }}</p>
+          <p class="text-2xl font-black text-slate-300 mt-1">${{ (resumenVentas.metricas?.netoAfecto || 0).toLocaleString('es-CL') }}</p>
         </div>
         <div class="bg-[#0D1B2E] p-5 rounded-2xl border border-slate-800">
           <p class="text-[11px] font-black uppercase text-slate-400">IVA Débito (19%)</p>
-          <p class="text-2xl font-black text-[#00D2C4] mt-1">${{ resumenVentas.metricas.ivaTotal.toLocaleString('es-CL') }}</p>
+          <p class="text-2xl font-black text-[#00D2C4] mt-1">${{ (resumenVentas.metricas?.ivaTotal || 0).toLocaleString('es-CL') }}</p>
         </div>
         <div class="bg-[#0D1B2E] p-5 rounded-2xl border border-slate-800">
           <p class="text-[11px] font-black uppercase text-slate-400">N° Transacciones</p>
-          <p class="text-2xl font-black text-white mt-1">{{ resumenVentas.metricas.totalTransacciones }} Ventas</p>
+          <p class="text-2xl font-black text-white mt-1">{{ resumenVentas.metricas?.totalTransacciones || 0 }} Ventas</p>
         </div>
       </div>
 
-      <!-- TABLA DETALLE DE VENTAS -->
+      <!-- TABLA DETALLE DE VENTAS DE LA PESTAÑA 1 -->
       <div class="bg-[#0D1B2E] p-6 rounded-2xl border border-slate-800">
-        <h3 class="text-sm font-black text-white mb-4">Registro Detallado de Boletas</h3>
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-black text-white">Registro Detallado de Boletas</h3>
+          <span class="text-[11px] text-slate-500 font-medium">💡 Haz clic en una fila para ver el desglose de productos</span>
+        </div>
+
         <div class="overflow-x-auto">
           <table class="w-full text-left border-collapse text-xs">
             <thead>
@@ -390,19 +397,117 @@ onMounted(() => {
                 <th class="p-3">Cajero</th>
                 <th class="p-3">Método Pago</th>
                 <th class="p-3 text-right">Monto Total</th>
+                <th class="p-3 text-center">Detalle</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-800 font-medium text-slate-300">
-              <tr v-for="v in resumenVentas.ventas" :key="v.id_venta" class="hover:bg-slate-800/50">
-                <td class="p-3 font-bold text-white">#{{ v.id_venta }}</td>
+              <tr 
+                v-for="v in resumenVentas.ventas" 
+                :key="v.id_venta" 
+                @click="boletaSeleccionada = v"
+                class="hover:bg-slate-800/80 cursor-pointer transition-colors group"
+              >
+                <td class="p-3 font-bold text-white group-hover:text-[#00D2C4] transition-colors">
+                  #{{ v.id_venta }}
+                </td>
                 <td class="p-3">{{ new Date(v.fecha_venta).toLocaleString('es-CL') }}</td>
                 <td class="p-3">{{ v.usuarios?.nombre_usuario || 'Admin' }}</td>
-                <td class="p-3"><span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase border border-slate-700">{{ v.metodo_pago }}</span></td>
-                <td class="p-3 text-right font-black text-[#00D2C4]">${{ parseFloat(v.total).toLocaleString('es-CL') }}</td>
+                <td class="p-3">
+                  <span class="bg-slate-800 text-slate-300 px-2 py-0.5 rounded text-[10px] font-bold uppercase border border-slate-700">
+                    {{ v.metodo_pago }}
+                  </span>
+                </td>
+                <td class="p-3 text-right font-black text-[#00D2C4]">
+                  ${{ parseFloat(v.total).toLocaleString('es-CL') }}
+                </td>
+                <td class="p-3 text-center">
+                  <button 
+                    @click.stop="boletaSeleccionada = v"
+                    class="p-1.5 bg-slate-900 hover:bg-[#00D2C4] hover:text-[#0B192C] text-slate-400 rounded-lg transition-all border border-slate-800"
+                    title="Ver productos de esta boleta"
+                  >
+                    👁️ Ver
+                  </button>
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+
+    <!-- MODAL POPUP: DETALLE DE BOLETA DESGLOSADA -->
+    <div 
+      v-if="boletaSeleccionada" 
+      class="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in"
+    >
+      <div class="bg-[#0D1B2E] rounded-3xl p-6 max-w-lg w-full border border-slate-800 shadow-2xl relative text-white space-y-5">
+          
+        <!-- BOTÓN CERRAR -->
+        <button 
+          @click="boletaSeleccionada = null" 
+          class="absolute top-5 right-5 text-slate-400 hover:text-white font-bold text-xl transition-colors"
+        >
+          ✕
+        </button>
+
+        <!-- ENCABEZADO BOLETA -->
+        <div class="border-b border-slate-800 pb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🧾</span>
+            <h3 class="text-base font-black text-white">
+              Desglose de Boleta N° #{{ boletaSeleccionada.id_venta }}
+            </h3>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">
+            Atendido por: <strong class="text-slate-200">{{ boletaSeleccionada.usuarios?.nombre_usuario || 'Admin' }}</strong> 
+            • {{ new Date(boletaSeleccionada.fecha_venta).toLocaleString('es-CL') }}
+          </p>
+        </div>
+
+        <!-- LISTADO DE VENTAS INDIVIDUALES (PRODUCTOS) -->
+        <div class="space-y-2">
+          <span class="text-[11px] font-black uppercase text-slate-400 tracking-wider">
+            Productos Comprados:
+          </span>
+          <div class="max-h-60 overflow-y-auto divide-y divide-slate-800/80 bg-slate-900/60 rounded-2xl p-3 border border-slate-800">
+            <div 
+              v-for="item in boletaSeleccionada.detalle_venta" 
+              :key="item.id_detalle || item.id_producto"
+              class="py-2.5 flex justify-between items-center text-xs"
+            >
+              <div class="flex flex-col">
+                <span class="font-bold text-white">
+                  {{ item.productos?.nombre_producto || 'Producto en catálogo' }}
+                </span>
+                <span class="text-[10px] text-slate-400">
+                  Cantidad: <strong class="text-slate-300">{{ item.cantidad }} {{ item.productos?.unidad_medida === 'KILO' ? 'kg' : 'ud' }}</strong> 
+                  • Precio Un: ${{ parseFloat(item.precio_unitario || 0).toLocaleString('es-CL') }}
+                </span>
+              </div>
+              <span class="font-mono font-bold text-[#00D2C4]">
+                ${{ parseFloat(item.subtotal || (item.cantidad * item.precio_unitario)).toLocaleString('es-CL') }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- RESUMEN FINANCIERO DE LA BOLETA -->
+        <div class="pt-3 border-t border-slate-800 flex justify-between items-center">
+          <div>
+            <p class="text-[10px] uppercase text-slate-400 font-bold">Método de Pago</p>
+            <span class="text-xs font-bold text-slate-200 uppercase bg-slate-800 px-2 py-0.5 rounded border border-slate-700">
+              {{ boletaSeleccionada.metodo_pago }}
+            </span>
+          </div>
+          <div class="text-right">
+            <p class="text-[10px] uppercase text-slate-400 font-bold">Total Transacción</p>
+            <span class="text-xl font-black text-[#00D2C4]">
+              ${{ parseFloat(boletaSeleccionada.total).toLocaleString('es-CL') }}
+            </span>
+          </div>
+        </div>
+
       </div>
     </div>
 

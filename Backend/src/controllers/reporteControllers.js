@@ -1,14 +1,27 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-// 1. OBTENER RESUMEN DE VENTAS POR PERÍODO (DIARIO, MENSUAL O RANGO PERSONALIZADO)
+// 1. OBTENER RESUMEN DE VENTAS POR PERÍODO (CON ZONA HORARIA LOCAL CHILE UTC-3)
 export const getVentasPorPeriodo = async (req, res) => {
     try {
         const { fechaInicio, fechaFin } = req.query;
 
-        // Si no vienen fechas, asumimos el mes actual por defecto
-        const inicio = fechaInicio ? new Date(fechaInicio) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-        const fin = fechaFin ? new Date(fechaFin + 'T23:59:59') : new Date();
+        let inicio, fin;
+
+        if (fechaInicio && fechaFin) {
+            // Forzamos el horario local completo (00:00:00 a 23:59:59) agregando la hora explícita
+            // '-03:00' asegura la zona horaria chilena para evitar que UTC desplace las 21:00 hrs
+            inicio = new Date(`${fechaInicio}T00:00:00.000-03:00`);
+            fin = new Date(`${fechaFin}T23:59:59.999-03:00`);
+        } else {
+            // Si no vienen fechas, por defecto toma todo el mes actual
+            const ahora = new Date();
+            const anoActual = ahora.getFullYear();
+            const mesActual = String(ahora.getMonth() + 1).padStart(2, '0');
+            
+            inicio = new Date(`${anoActual}-${mesActual}-01T00:00:00.000-03:00`);
+            fin = new Date(`${fechaFin || ahora.toISOString().split('T')[0]}T23:59:59.999-03:00`);
+        }
 
         const ventas = await prisma.ventas.findMany({
             where: {
@@ -27,7 +40,7 @@ export const getVentasPorPeriodo = async (req, res) => {
                         productos: { 
                             select: { 
                                 nombre_producto: true,
-                                unidad_medida: true // 👈 Agregado para reportes detallados
+                                unidad_medida: true 
                             } 
                         }
                     }

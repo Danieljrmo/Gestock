@@ -10,6 +10,7 @@ const props = defineProps({
     default: () => []
   }
 });
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 
 const emit = defineEmits(['close', 'saved']);
@@ -23,10 +24,13 @@ const submitting = ref(false);
 const busquedaProducto = ref('');
 const productoSeleccionado = ref(null);
 
+// ESTADOS PARA MOTIVO DE OPERACIÓN
+const motivoPredefinido = ref('Compra a Proveedor');
+const motivoDetalle = ref('');
+
 const movementForm = ref({
   tipo_movimiento: 'Entrada',
   cantidad: '',
-  motivo: '',
   id_proveedor: ''
 });
 
@@ -55,9 +59,10 @@ const resetForm = () => {
   movementForm.value = {
     tipo_movimiento: 'Entrada',
     cantidad: '',
-    motivo: '',
     id_proveedor: ''
   };
+  motivoPredefinido.value = 'Compra a Proveedor';
+  motivoDetalle.value = '';
   errorMsg.value = '';
   successMsg.value = '';
 };
@@ -84,12 +89,17 @@ const handleRegisterMovement = async () => {
     submitting.value = true;
     errorMsg.value = '';
     
+    // Armamos la justificación final uniendo el selector y el detalle si existe
+    const motivoFinal = motivoDetalle.value.trim()
+      ? `${motivoPredefinido.value}: ${motivoDetalle.value.trim()}`
+      : motivoPredefinido.value;
+
     // Convertimos cantidad con parseFloat para soportar kilos fraccionados
     const payload = {
       id_producto: parseInt(productoSeleccionado.value.id_producto || productoSeleccionado.value.id),
       tipo_movimiento: movementForm.value.tipo_movimiento,
       cantidad: parseFloat(movementForm.value.cantidad),
-      motivo: movementForm.value.motivo.trim() || (movementForm.value.tipo_movimiento === 'Entrada' ? 'Ingreso de Mercadería' : 'Ajuste de Merma')
+      motivo: motivoFinal
     };
 
     await axios.post(`${API_BASE_URL}/api/movimientos`, payload, {
@@ -232,17 +242,36 @@ const handleRegisterMovement = async () => {
           />
         </div>
 
-        <!-- MOTIVO / JUSTIFICACIÓN -->
-        <div>
-          <label class="block text-[11px] font-black tracking-wider uppercase text-slate-400 mb-2">
+        <!-- MOTIVO / JUSTIFICACIÓN PREDEFINIDO + NOTA OPCIONAL -->
+        <div class="space-y-3">
+          <label class="block text-[11px] font-black tracking-wider uppercase text-slate-400">
             Motivo o Justificación
           </label>
-          <textarea 
-            v-model="movementForm.motivo" 
-            rows="2" 
-            placeholder="Ej: Factura N°2044 o Producto roto en góndola"
-            class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-semibold focus:outline-none focus:border-[#00D2C4] transition-all resize-none placeholder-slate-500"
-          ></textarea>
+          
+          <!-- Selector con opciones estandarizadas -->
+          <div class="relative">
+            <select 
+              v-model="motivoPredefinido" 
+              class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs font-bold focus:outline-none focus:border-[#00D2C4] transition-all appearance-none cursor-pointer pr-8"
+            >
+              <option value="Compra a Proveedor"> Compra a Proveedor</option>
+              <option value="Movimiento personal"> Movimiento personal</option>
+              <option value="Reajuste de inventario"> Reajuste de inventario</option>
+              <option value="Producto dado de baja"> Producto dado de baja / Merma</option>
+              <option value="Otro"> Otro (Especificar detalle abajo)...</option>
+            </select>
+            <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 text-xs">
+              ▼
+            </div>
+          </div>
+
+          <!-- Campo libre para detalles adicionales (ej: N° de Factura u observaciones) -->
+          <input 
+            v-model="motivoDetalle" 
+            type="text"
+            placeholder="Detalle adicional u observación (ej: Factura N°2044)..."
+            class="w-full px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-900 text-white text-xs font-medium focus:outline-none focus:border-[#00D2C4] transition-all placeholder-slate-500"
+          />
         </div>
 
         <!-- BOTONES DE ACCIÓN -->

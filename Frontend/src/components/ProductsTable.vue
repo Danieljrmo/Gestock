@@ -46,46 +46,56 @@
       ✅ {{ successMsg }}
     </div>
 
-    <!-- BLOQUE 2: Filtros por Categoría con Scroll Horizontal Limpio -->
+    <!-- BLOQUE 2: Filtros por Categoría Desplegable + Búsqueda Global -->
     <div class="bg-[#0D1B2E] p-4 rounded-2xl border border-slate-800 shadow-sm space-y-4">
-      <div class="flex items-center justify-between">
-        <span class="text-xs font-black uppercase text-slate-400">Categorías del Catálogo:</span>
-        <span class="text-[11px] text-slate-500 font-medium">Desliza para ver más →</span>
+  
+      <!-- Encabezado con título y subtítulo alineado a la izquierda -->
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-black uppercase text-slate-400">FILTRAR POR CATEGORÍA:</span>
+        <span class="text-[11px] text-slate-500 font-medium">(Selecciona para filtrar el catálogo)</span>
       </div>
 
-      <!-- Scroll Horizontal -->
-      <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
+      <!-- Contenedor de Filtro: Botón TODOS + Desplegable + Eliminar -->
+      <div class="flex flex-wrap items-center gap-3">
+        <!-- Botón TODOS -->
         <button 
           @click="selectCategory('todos')"
           :class="categorySelected === 'todos' ? 'bg-[#00D2C4] text-[#0B192C] font-black shadow-md' : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'"
           class="px-4 py-2 text-xs font-bold rounded-xl whitespace-nowrap transition-all flex-shrink-0"
         >
-          🗂️ TODOS ({{ productos.length }})
+          📂 TODOS ({{ productos.length }})
         </button>
 
-        <div 
-          v-for="cat in categorias" 
-          :key="cat.id_categoria"
-          class="inline-flex items-center gap-1 bg-slate-900 rounded-xl p-1 flex-shrink-0 border border-slate-800"
-        >
-          <button 
-            @click="selectCategory(cat.id_categoria)"
-            :class="categorySelected === cat.id_categoria ? 'bg-[#00D2C4] text-[#0B192C] font-black shadow-sm' : 'text-slate-300 hover:text-white'"
-            class="px-3 py-1.5 text-xs font-bold rounded-lg whitespace-nowrap transition-all"
+        <!-- Menu Desplegable de Categorías -->
+        <div class="relative flex-1 min-w-[240px]">
+          <select
+            :value="categorySelected"
+            @change="e => selectCategory(e.target.value === 'todos' ? 'todos' : Number(e.target.value))"
+            class="w-full appearance-none bg-slate-900 border border-slate-700 text-slate-200 text-xs font-bold rounded-xl px-4 py-2 pr-8 focus:outline-none focus:border-[#00D2C4] transition-all cursor-pointer"
           >
-            {{ cat.nombre_categoria }}
-          </button>
-      
-          <!-- Botón para eliminar categoría -->
-          <button 
-            v-if="authStore.user?.rol?.toUpperCase().startsWith('ADMIN')"
-            @click="confirmarEliminarCategoria(cat)"
-            class="p-1 text-slate-500 hover:text-red-400 rounded-md transition-colors"
-            title="Eliminar Categoría"
-          >
-            ✕
-          </button>
+            <option value="todos">📁 Seleccionar Categoría desplegable...</option>
+            <option 
+              v-for="cat in categorias" 
+              :key="cat.id_categoria" 
+              :value="cat.id_categoria"
+            >
+              {{ cat.nombre_categoria }}
+            </option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-400 text-xs">
+            ▼
+          </div>
         </div>
+
+        <!-- Botón condicional para eliminar la categoría seleccionada (Solo Admin) -->
+        <button 
+          v-if="authStore.user?.rol?.toUpperCase().startsWith('ADMIN') && categorySelected !== 'todos'"
+          @click="confirmarEliminarCategoria(categorias.find(c => c.id_categoria === Number(categorySelected)))"
+          class="px-3 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold rounded-xl transition-all flex items-center gap-1 flex-shrink-0"
+          title="Eliminar Categoría Seleccionada"
+        >
+          ✕ Eliminar Categoría
+        </button>
       </div>
 
       <!-- BARRA DE BÚSQUEDA HORIZONTAL GLOBAL -->
@@ -334,14 +344,17 @@
             </select>
           </div>
 
-          <!-- STOCK INICIAL Y ALERTA STOCK MÍNIMO -->
-          <div class="grid grid-cols-2 gap-4">
-            <!-- Stock Inicial -->
+          <!-- STOCK INICIAL / ACTUAL Y ALERTA STOCK MÍNIMO -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <!-- Stock (Editable al crear, Deshabilitado/Informativo al editar) -->
             <div>
               <label class="block text-[11px] font-black tracking-wider uppercase text-slate-400 mb-2">
-                Stock Inicial {{ productForm.unidad_medida === 'KILO' ? '(Kg)' : '(Unidades)' }}
+                {{ isEditing ? 'Stock Actual (Solo lectura)' : 'Stock Inicial' }} {{ productForm.unidad_medida === 'KILO' ? '(Kg)' : '(Unidades)' }}
               </label>
+              
+              <!-- Input para creación de producto nuevo -->
               <input 
+                v-if="!isEditing"
                 v-model="productForm.stock_actual" 
                 type="number" 
                 :step="productForm.unidad_medida === 'KILO' ? '0.001' : '1'"
@@ -350,9 +363,23 @@
                 :placeholder="productForm.unidad_medida === 'KILO' ? 'Ej: 10.500' : 'Ej: 30'"
                 class="w-full px-4 py-3 rounded-xl border border-slate-700 bg-slate-900 text-white text-sm font-semibold focus:outline-none focus:border-[#00D2C4]"
               />
+
+              <!-- Campo bloqueado + Mensaje explicativo cuando se edita -->
+              <div v-else class="space-y-1">
+                <input 
+                  :value="productForm.stock_actual" 
+                  type="text" 
+                  disabled
+                  readonly
+                  class="w-full px-4 py-3 rounded-xl border border-slate-800 bg-slate-950 text-slate-400 text-sm font-bold cursor-not-allowed opacity-75 select-none"
+                />
+                <p class="text-[10px] text-amber-400/90 font-medium flex items-center gap-1">
+                  🔒 Para ajustar stock usa "Registrar Movimiento".
+                </p>
+              </div>
             </div>
 
-            <!-- Alerta Stock Mínimo -->
+            <!-- Alerta Stock Mínimo (Siempre editable) -->
             <div>
               <label class="block text-[11px] font-black tracking-wider uppercase text-slate-400 mb-2">
                 Alerta Stock Mínimo {{ productForm.unidad_medida === 'KILO' ? '(Kg)' : '(Unidades)' }}
