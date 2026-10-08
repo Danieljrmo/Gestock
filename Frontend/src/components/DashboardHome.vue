@@ -100,7 +100,6 @@
         </div>
         <div class="w-12 h-12 bg-slate-900 rounded-xl flex items-center justify-center text-xl border border-slate-800">💰</div>
       </div>
-
     </div>
 
     <!-- SECCIÓN DE GRÁFICOS -->
@@ -120,45 +119,71 @@
       </div>
     </div>
 
-    <!-- TABLA DE ALERTAS RÁPIDAS DE REPOSICIÓN -->
-    <div class="bg-[#0D1B2E] p-6 rounded-2xl shadow-sm border border-slate-800">
-      <h3 class="text-sm font-black text-[#DC143C] mb-4 flex items-center gap-2">
-        ⚠️ Productos Críticos sin Stock Mínimo
-      </h3>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs">
-          <thead>
-            <tr class="bg-slate-900/80 text-slate-400 font-bold uppercase border-b border-slate-800">
-              <th class="p-3">Producto</th>
-              <th class="p-3 text-center">Stock Actual</th>
-              <th class="p-3 text-center">Stock Mínimo</th>
-              <th class="p-3 text-right">Estado</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-800">
-            <tr v-for="p in productosCriticos" :key="p.id_producto" class="hover:bg-slate-800/50">
-              <td class="p-3 font-bold text-white">{{ p.nombre_producto }}</td>
-              <td class="p-3 text-center font-black text-[#DC143C]">
-                {{ parseFloat(p.stock_actual) }} {{ p.unidad_medida === 'KILO' ? 'kg' : 'unids.' }}
-              </td>
-              <td class="p-3 text-center font-bold text-slate-400">
-                {{ parseFloat(p.stock_minimo) }} {{ p.unidad_medida === 'KILO' ? 'kg' : 'unids.' }}
-              </td>
-              <td class="p-3 text-right">
-                <span class="bg-red-950/40 text-red-400 border border-red-800/40 font-black px-2.5 py-1 rounded-full text-[10px]">
-                  Reponer
-                </span>
-              </td>
-            </tr>
-            <tr v-if="productosCriticos.length === 0">
-              <td colspan="4" class="p-4 text-center text-slate-500 font-bold">
-                ✅ Todo el inventario está sobre los niveles mínimos requeridos.
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <!-- TABLA DE ALERTAS RÁPIDAS DE REPOSICIÓN CON SCROLL Y DATO DE CATEGORÍA -->
+<div class="bg-[#0D1B2E] p-6 rounded-2xl shadow-sm border border-slate-800 space-y-4">
+  
+  <!-- ENCABEZADO CON TITULO Y CATEGORÍA MÁS AFECTADA -->
+  <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+    <h3 class="text-sm font-black text-[#DC143C] flex items-center gap-2">
+      ⚠️ Productos Críticos sin Stock Mínimo ({{ productosCriticos.length }})
+    </h3>
+
+    <!-- INDICADOR DE CATEGORÍA MÁS AFECTADA -->
+    <div v-if="productosCriticos.length > 0" class="bg-red-950/40 border border-red-800/40 px-3 py-1 rounded-xl flex items-center gap-1.5">
+      <span class="text-[10px] font-black uppercase text-red-400">Categoría Más Afectada:</span>
+      <span class="text-xs font-black text-white">{{ categoriaMasAfectada }}</span>
     </div>
+  </div>
+
+  <!-- TABLA DENTRO DE CONTENEDOR CON SCROLL VERTICAL (MAX HEIGHT) -->
+  <div class="overflow-x-auto max-h-72 overflow-y-auto pr-1">
+    <table class="w-full text-left text-xs border-collapse">
+      <thead class="sticky top-0 bg-[#0D1B2E] z-10">
+        <tr class="bg-slate-900/90 text-slate-400 font-bold uppercase border-b border-slate-800">
+          <th class="p-3">Producto</th>
+          <th class="p-3 text-center">Stock Actual</th>
+          <th class="p-3 text-center">Stock Mínimo</th>
+          <th class="p-3 text-right">Estado</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-800">
+        <tr 
+          v-for="p in productosCriticos" 
+          :key="p.id_producto || p.id" 
+          class="hover:bg-slate-800/50 transition-colors"
+        >
+          <td class="p-3">
+            <div class="flex flex-col">
+              <span class="font-bold text-white">{{ p.nombre_producto }}</span>
+              <span class="text-[10px] text-slate-500">
+                📂 {{ p.categorias?.nombre_categoria || 'Sin Categoría' }}
+              </span>
+            </div>
+          </td>
+          <td class="p-3 text-center font-black text-[#DC143C]">
+            {{ parseFloat(p.stock_actual) }} {{ p.unidad_medida === 'KILO' ? 'kg' : 'unids.' }}
+          </td>
+          <td class="p-3 text-center font-bold text-slate-400">
+            {{ parseFloat(p.stock_minimo || 5) }} {{ p.unidad_medida === 'KILO' ? 'kg' : 'unids.' }}
+          </td>
+          <td class="p-3 text-right">
+            <span class="bg-red-950/40 text-red-400 border border-red-800/40 font-black px-2.5 py-1 rounded-full text-[10px]">
+              Reponer
+            </span>
+          </td>
+        </tr>
+
+        <!-- ESTADO CUANDO NO HAY PRODUCTOS CRÍTICOS -->
+        <tr v-if="productosCriticos.length === 0">
+          <td colspan="4" class="p-6 text-center text-slate-500 font-bold">
+            ✅ Todo el inventario está sobre los niveles mínimos requeridos.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
 
   </div>
 </template>
@@ -174,6 +199,9 @@ ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale,
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 const cargando = ref(true);
 const authStore = useAuthStore();
+
+// Variable reactiva para la categoría más afectada
+const categoriaMasAfectada = ref('Ninguna');
 
 // FECHA ACTUAL FORMATEADA (HORA LOCAL)
 const hoyObj = new Date();
@@ -252,13 +280,34 @@ const cargarDatosDashboard = async () => {
     const token = localStorage.getItem('token');
     const headers = { Authorization: `Bearer ${token}` };
 
-    // 1. Cargar Productos (Alertas y Capital)
+    // 1. Cargar Productos (Alertas completas, categorías mas afectadas y Capital)
     const resProd = await axios.get(`${API_BASE_URL}/api/productos`, { headers });
     const productos = Array.isArray(resProd.data) ? resProd.data : resProd.data.productos || [];
     
     const criticos = productos.filter(p => parseFloat(p.stock_actual) <= parseFloat(p.stock_minimo || 5));
     kpis.value.alertasStock = criticos.length;
-    productosCriticos.value = criticos.slice(0, 5);
+    productosCriticos.value = criticos;
+
+    // Determinamos la categoría que acumula mayor número de artículos en nivel crítico
+    if (criticos.length > 0) {
+      const conteoCat = {};
+      criticos.forEach(p => {
+        const nomCat = p.categorias?.nombre_categoria || 'General';
+        conteoCat[nomCat] = (conteoCat[nomCat] || 0) + 1;
+      });
+
+      let maxCount = 0;
+      let catDominante = 'Ninguna';
+      Object.entries(conteoCat).forEach(([cat, count]) => {
+        if (count > maxCount) {
+          maxCount = count;
+          catDominante = cat;
+        }
+      });
+      categoriaMasAfectada.value = `${catDominante} (${maxCount} arts.)`;
+    } else {
+      categoriaMasAfectada.value = 'Ninguna';
+    }
     
     kpis.value.valorInventario = productos.reduce((acc, p) => {
       return acc + (parseFloat(p.stock_actual || 0) * parseFloat(p.precio_venta || 0));
