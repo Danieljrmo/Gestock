@@ -120,72 +120,122 @@
     </div>
 
     <!-- TABLA DE ALERTAS RÁPIDAS DE REPOSICIÓN CON SCROLL Y DATO DE CATEGORÍA -->
-<div class="bg-[#0D1B2E] p-6 rounded-2xl shadow-sm border border-slate-800 space-y-4">
+    <div class="bg-[#0D1B2E] p-6 rounded-2xl shadow-sm border border-slate-800 space-y-4">
   
-  <!-- ENCABEZADO CON TITULO Y CATEGORÍA MÁS AFECTADA -->
-  <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
-    <h3 class="text-sm font-black text-[#DC143C] flex items-center gap-2">
-      ⚠️ Productos Críticos sin Stock Mínimo ({{ productosCriticos.length }})
-    </h3>
+    <!-- ENCABEZADO CON TITULO Y CATEGORÍA MÁS AFECTADA -->
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-black text-[#DC143C] flex items-center gap-2">
+          ⚠️ Productos Críticos sin Stock Mínimo ({{ productosCriticos.length }})
+        </h3>
 
-    <!-- INDICADOR DE CATEGORÍA MÁS AFECTADA -->
-    <div v-if="productosCriticos.length > 0" class="bg-red-950/40 border border-red-800/40 px-3 py-1 rounded-xl flex items-center gap-1.5">
-      <span class="text-[10px] font-black uppercase text-red-400">Categoría Más Afectada:</span>
-      <span class="text-xs font-black text-white">{{ categoriaMasAfectada }}</span>
+        <!-- INDICADOR DE CATEGORÍA MÁS AFECTADA -->
+        <div v-if="productosCriticos.length > 0" class="bg-red-950/40 border border-red-800/40 px-3 py-1 rounded-xl flex items-center gap-1.5">
+          <span class="text-[10px] font-black uppercase text-red-400">Categoría Más Afectada:</span>
+          <span class="text-xs font-black text-white">{{ categoriaMasAfectada }}</span>
+        </div>
     </div>
-  </div>
 
-  <!-- TABLA DENTRO DE CONTENEDOR CON SCROLL VERTICAL (MAX HEIGHT) -->
-  <div class="overflow-x-auto max-h-72 overflow-y-auto pr-1">
-    <table class="w-full text-left text-xs border-collapse">
-      <thead class="sticky top-0 bg-[#0D1B2E] z-10">
-        <tr class="bg-slate-900/90 text-slate-400 font-bold uppercase border-b border-slate-800">
-          <th class="p-3">Producto</th>
-          <th class="p-3 text-center">Stock Actual</th>
-          <th class="p-3 text-center">Stock Mínimo</th>
-          <th class="p-3 text-right">Estado</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-slate-800">
-        <tr 
-          v-for="p in productosCriticos" 
-          :key="p.id_producto || p.id" 
-          class="hover:bg-slate-800/50 transition-colors"
+    <!-- TABLA DENTRO DE CONTENEDOR CON SCROLL VERTICAL (MAX HEIGHT) -->
+    <div class="overflow-x-auto max-h-72 overflow-y-auto pr-1">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead class="sticky top-0 bg-[#0D1B2E] z-10">
+            <tr class="bg-slate-900/90 text-slate-400 font-bold uppercase border-b border-slate-800">
+              <th class="p-3">Producto</th>
+              <th class="p-3 text-center">Stock Actual</th>
+              <th class="p-3 text-center">Stock Mínimo</th>
+              <th class="p-3 text-right">Estado</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800">
+            <tr 
+              v-for="p in productosCriticos" 
+              :key="p.id_producto || p.id" 
+              class="hover:bg-slate-800/50 transition-colors"
+            >
+              <td class="p-3">
+                <div class="flex flex-col">
+                  <span class="font-bold text-white">{{ p.nombre_producto }}</span>
+                  <span class="text-[10px] text-slate-500">
+                    📂 {{ p.categorias?.nombre_categoria || 'Sin Categoría' }}
+                  </span>
+                </div>
+              </td>
+              <td class="p-3 text-center font-black text-[#DC143C]">
+                {{ parseFloat(p.stock_actual) }} {{ p.unidad_medida === 'KILO' ? 'kg' : 'unids.' }}
+              </td>
+              <td class="p-3 text-center font-bold text-slate-400">
+                {{ parseFloat(p.stock_minimo || 5) }} {{ p.unidad_medida === 'KILO' ? 'kg' : 'unids.' }}
+              </td>
+              <td class="p-3 text-right">
+                <span class="bg-red-950/40 text-red-400 border border-red-800/40 font-black px-2.5 py-1 rounded-full text-[10px]">
+                  Reponer
+                </span>
+              </td>
+            </tr>
+            <!-- ESTADO CUANDO NO HAY PRODUCTOS CRÍTICOS -->
+            <tr v-if="productosCriticos.length === 0">
+              <td colspan="4" class="p-6 text-center text-slate-500 font-bold">
+                ✅ Todo el inventario está sobre los niveles mínimos requeridos.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+    </div>
+    </div>
+
+    <!-- TARJETA 2: MÓDULO ESPECIAL MONITOR DE FRUTAS Y VERDURAS (Totalmente independiente) -->
+    <div class="bg-[#0D1B2E] p-6 rounded-2xl border border-slate-800 shadow-sm space-y-4 mt-6">
+    
+      <!-- ENCABEZADO MONITOR -->
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xl">🥬</span>
+          <div>
+            <h3 class="text-sm font-black text-white">Monitor de Frutas & Verduras ({{ monitorFrutas.length }})</h3>
+            <p class="text-[11px] text-slate-400">Variación de precios de venta/costo tras compras de feria/proveedor</p>
+          </div>
+        </div>
+        <span class="bg-emerald-950/40 text-emerald-400 border border-emerald-800/40 font-black px-3 py-1 rounded-xl text-[10px] uppercase">
+          Seguimiento Semanal
+        </span>
+      </div>
+
+      <!-- LISTADO CON SCROLL DE PRODUCTOS -->
+      <div v-if="monitorFrutas.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-h-80 overflow-y-auto pr-1">
+        <div 
+          v-for="item in monitorFrutas" 
+          :key="item.id_producto"
+          class="bg-slate-900/80 p-3.5 rounded-xl border border-slate-800 flex justify-between items-center text-xs hover:border-slate-700 transition-colors"
         >
-          <td class="p-3">
-            <div class="flex flex-col">
-              <span class="font-bold text-white">{{ p.nombre_producto }}</span>
-              <span class="text-[10px] text-slate-500">
-                📂 {{ p.categorias?.nombre_categoria || 'Sin Categoría' }}
-              </span>
-            </div>
-          </td>
-          <td class="p-3 text-center font-black text-[#DC143C]">
-            {{ parseFloat(p.stock_actual) }} {{ p.unidad_medida === 'KILO' ? 'kg' : 'unids.' }}
-          </td>
-          <td class="p-3 text-center font-bold text-slate-400">
-            {{ parseFloat(p.stock_minimo || 5) }} {{ p.unidad_medida === 'KILO' ? 'kg' : 'unids.' }}
-          </td>
-          <td class="p-3 text-right">
-            <span class="bg-red-950/40 text-red-400 border border-red-800/40 font-black px-2.5 py-1 rounded-full text-[10px]">
-              Reponer
+          <div class="flex flex-col gap-0.5">
+            <span class="font-bold text-white text-sm">{{ item.nombre_producto }}</span>
+            <span class="text-[10px] text-slate-400">
+              Costo: <strong class="text-emerald-400">${{ item.costoActual.toLocaleString('es-CL') }}</strong> 
+              • Venta: <strong class="text-slate-200">${{ item.precioVenta.toLocaleString('es-CL') }} / {{ item.unidad_medida === 'KILO' ? 'kg' : 'ud' }}</strong>
             </span>
-          </td>
-        </tr>
+          </div>
 
-        <!-- ESTADO CUANDO NO HAY PRODUCTOS CRÍTICOS -->
-        <tr v-if="productosCriticos.length === 0">
-          <td colspan="4" class="p-6 text-center text-slate-500 font-bold">
-            ✅ Todo el inventario está sobre los niveles mínimos requeridos.
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+          <!-- INSIGNIA DE VARIACIÓN -->
+          <div class="text-right">
+            <span v-if="item.variacion > 0" class="px-2.5 py-1 rounded-lg text-xs font-black bg-red-500/10 text-red-400 border border-red-500/20 inline-flex items-center gap-1">
+              🔺 +${{ item.variacion.toLocaleString('es-CL') }}
+            </span>
+            <span v-else-if="item.variacion < 0" class="px-2.5 py-1 rounded-lg text-xs font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 inline-flex items-center gap-1">
+              🔻 -${{ Math.abs(item.variacion).toLocaleString('es-CL') }}
+            </span>
+            <span v-else class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-800 text-slate-400 border border-slate-700 inline-flex items-center gap-1">
+              ➖ Sin Cambios
+            </span>
+          </div>
+        </div>
+      </div>
 
+      <!-- ESTADO SIN FRUTAS REGISTRADAS -->
+      <div v-else class="p-6 text-center text-xs text-slate-500 font-semibold bg-slate-900/40 rounded-xl border border-slate-800/50">
+        📦 No hay productos registrados en la categoría Frutas y Verduras.
+      </div>
+    </div> <!-- CIERRA TARJETA 2 -->
 </div>
-
-  </div>
 </template>
 
 <script setup>
@@ -199,6 +249,8 @@ ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale,
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
 const cargando = ref(true);
 const authStore = useAuthStore();
+// Variable reactiva para almacenar las frutas/verduras con su variación
+const monitorFrutas = ref([]);
 
 // Variable reactiva para la categoría más afectada
 const categoriaMasAfectada = ref('Ninguna');
@@ -312,6 +364,50 @@ const cargarDatosDashboard = async () => {
     kpis.value.valorInventario = productos.reduce((acc, p) => {
       return acc + (parseFloat(p.stock_actual || 0) * parseFloat(p.precio_venta || 0));
     }, 0);
+
+    //Cargar historial de movimientos para buscar costos anteriores
+    let historialMov = [];
+    try {
+      const resMov = await axios.get(`${API_BASE_URL}/api/movimientos`, { headers });
+      historialMov = Array.isArray(resMov.data) ? resMov.data : resMov.data.movimientos || [];
+    } catch (e) {
+      console.warn("No se pudo cargar historial de movimientos para variación de costos");
+    }
+
+    //PROCESAR MONITOR DE FRUTAS Y VERDURAS 
+    // FILTRADO EXACTO Y AUTOMÁTICO DE FRUTAS Y VERDURAS
+    const productosFrutas = productos.filter(p => {
+      const nombreCat = (
+        p.categorias?.nombre_categoria || 
+        p.categoria?.nombre_categoria || 
+        p.nombre_categoria || 
+        ''
+      ).trim().toLowerCase();
+
+      return nombreCat.includes('frutas y verduras') || nombreCat.includes('frutas') || nombreCat.includes('verduras');
+    });
+
+    // 2. MAPEO DIRECTO CON VARIACIÓN DE COSTO DE COMPRA (PROVEEDOR/FERIA)
+    monitorFrutas.value = productosFrutas.map(p => {
+      const costoActual = parseFloat(p.precio_compra || 0);
+      const precioVenta = parseFloat(p.precio_venta || 0);
+      
+      // Tomamos costo_anterior retornado por la DB (si es null, usa costoActual)
+      const costoAnterior = p.costo_anterior !== null && p.costo_anterior !== undefined
+        ? parseFloat(p.costo_anterior)
+        : costoActual;
+
+      const variacionCosto = costoActual - costoAnterior;
+
+      return {
+        id_producto: p.id_producto || p.id,
+        nombre_producto: p.nombre_producto,
+        costoActual,
+        precioVenta,
+        variacion: variacionCosto,
+        unidad_medida: p.unidad_medida || 'KILO'
+      };
+    });
 
     // 2. Cargar Ventas para KPIs
     const resVentas = await axios.get(`${API_BASE_URL}/api/reportes/periodo`, { headers });

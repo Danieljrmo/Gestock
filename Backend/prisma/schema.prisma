@@ -63,6 +63,7 @@ model productos {
   codigo_barra           String?                  @unique @db.VarChar(50)
   precio_compra          Decimal                  @db.Decimal(10, 2)
   precio_venta           Decimal                  @db.Decimal(10, 2)
+  costo_anterior         Float?
   stock_actual           Decimal?                 @default(0) @db.Decimal(10, 3) // CAMBIO: Stock soporta decimales
   stock_minimo           Decimal?                 @default(0) @db.Decimal(10, 3) // CAMBIO: Umbral ROP soporta decimales
   unidad_medida          String?                  @db.VarChar(50)

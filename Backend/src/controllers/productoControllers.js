@@ -100,17 +100,40 @@ export const actualizarProducto = async (req, res) => {
     } = req.body;
 
     try {
+        const idProd = parseInt(id);
+
+        // 1. Consultar el producto actual para obtener el precio de compra antes de editar
+        const productoExistente = await prisma.productos.findUnique({
+            where: { id_producto: idProd }
+        });
+
+        if (!productoExistente) {
+            return res.status(404).json({ mensaje: "Producto no encontrado." });
+        }
+
+        const nuevoPrecioCompra = parseFloat(precio_compra);
+        const costoViejo = parseFloat(productoExistente.precio_compra || 0);
+
+        let costoAnteriorActualizado = productoExistente.costo_anterior;
+
+        // 2. Si el precio de compra cambia respecto al que tenía, guardamos el costo viejo
+        if (!isNaN(nuevoPrecioCompra) && nuevoPrecioCompra !== costoViejo) {
+            costoAnteriorActualizado = costoViejo;
+        }
+
+        // 3. Actualizar el producto en la base de datos
         const productoActualizado = await prisma.productos.update({
-            where: { id_producto: parseInt(id) },
+            where: { id_producto: idProd },
             data: {
                 nombre_producto,
                 codigo_barra: codigo_barra || null,
-                precio_compra: parseFloat(precio_compra),
+                precio_compra: nuevoPrecioCompra,
                 precio_venta: parseFloat(precio_venta),
                 stock_actual: parseFloat(stock_actual),
                 stock_minimo: parseFloat(stock_minimo),
                 unidad_medida: unidad_medida || 'UNIDAD',
-                id_categoria: id_categoria ? parseInt(id_categoria) : null
+                id_categoria: id_categoria ? parseInt(id_categoria) : null,
+                costo_anterior: costoAnteriorActualizado
             }
         });
 
